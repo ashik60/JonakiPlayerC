@@ -50,3 +50,17 @@ if(WIN32)
 endif()
 
 add_test(NAME MpvPlaybackIntegrationTest COMMAND MpvPlaybackIntegrationTest)
+
+# 4. Skin Parser Unit Tests
+add_executable(SkinParserTest
+    unit/test_skin_parser.cpp
+    ../src/ui/SkinParser.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(SkinParserTest PRIVATE
+    Qt6::Core
+    Qt6::Test
+)
+
+add_test(NAME SkinParserTest COMMAND SkinParserTest)

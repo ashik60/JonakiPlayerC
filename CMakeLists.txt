@@ -94,6 +94,8 @@ set(UI_SOURCES
     src/ui/MainWindow.h
     src/ui/SkinRenderer.cpp
     src/ui/SkinRenderer.h
+    src/ui/SkinParser.cpp
+    src/ui/SkinParser.h
 )
 
 set(APP_SOURCES
