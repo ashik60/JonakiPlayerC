@@ -1,32 +1,36 @@
 ---
-updated: 2026-11-09T10:30:00+06:00
+updated: 2026-11-09T11:00:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M6 - Audio & Video Systems
-**Phase:** Phase 6 - Audio & Video Processing
-**Status:** completed
-**Plan:** M6 Audio & Video Systems (Completed & Verified)
+**Milestone:** M7 - Advanced Features & Preferences Dialog Hierarchy
+**Phase:** Phase 7 - Advanced Features & Preferences
+**Status:** in_progress
+**Plan:** M7 Advanced Features & Preferences Hierarchy
 
 ## Last Action
 
-- Performed focused M5 verification pass: tested Bengali subtitle rendering (যুক্তাক্ষর, কারচিহ্ন) and deterministic adjacent candidate selection priority.
-- Implemented 10-band graphic equalizer (31, 62, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz) with independent gain adjustment clamped to [-12dB, +12dB], reset, and toggle (`Shift+E`).
-- Implemented dynamic audio normalization using FFmpeg `dynaudnorm` (`f=500:g=31:p=0.95:m=10`), with unified filter graph management preventing chain corruption when toggled alongside the equalizer (`Shift+N`).
-- Implemented deinterlacing (`off`, `auto`, `on`) with hotkey `Ctrl+I`, verified against synthetic interlaced test media (`test_interlaced.mp4`).
-- Implemented audio delay synchronization in +/-0.05s steps (`Shift+<` / `Shift+>`), reset (`Shift+/`), and non-blocking OSD confirmation.
-- Implemented display aspect ratio scaling (Default, 16:9, 4:3, 16:10, 1:1, custom) with hotkey `Ctrl+F6` and context submenu.
-- Added comprehensive unit/integration test target `AudioVideoFilterTest`. All 7 test suites passing 100% in CTest.
-- Captured runtime evidence screenshot: `docs/milestones/evidence/m6_jonaki_audio_video_systems.png`.
-- Published `docs/milestones/milestone-reports/milestone_M6_completion_report.md` and updated Feature Parity Matrix.
+- Completed rigorous technical audit of real-world media playback verification across 85 files in `E:\Video Song`.
+- Restructured `docs/testing/real_media_test_report.md` to explicitly define and evaluate the 7-stage playback pipeline (Demuxing -> State Playing -> PTS Progression -> Video Decoding -> OpenGL FBO Render -> Audio Decoding -> Audio Sink Delivery).
+- Explicitly documented the 85 tests as playback smoke tests (0.5s–2.0s initialization, decode start, time progression over 66.5s runtime), separating them from full 12.54 hour playback.
+- Clarified boundaries between automated headless testing (packet decoding, filter compilation) vs. interactive GUI playback (OpenGL FBO rasterization and WASAPI audio delivery).
+- Formally separated filter graph compilation validity from subjective acoustic quality.
+- Qualified memory stability observations (zero crashes, leaks, or zombie threads across 85 consecutive sessions vs. formal heap leak instrumentation).
+- Verified `test_real_media_playback.cpp` compiles and all 7 core CTest targets pass 100%.
+- Verified `E:\Video Song` remains completely untouched.
 
 ## Next Steps
 
-1. Review M6 completion report and prepare for Milestone M7: Advanced Features & Preferences Dialog Hierarchy.
-2. Begin M7: Preferences tree dialog (751x564 px baseline matching PotPlayer), streaming URL playback (HTTP/HLS/YouTube yt-dlp hook), frame capture tool (`Ctrl+E` to PNG), and hardware decoding selection.
+1. Begin Milestone M7 implementation:
+   - Implement Preferences Tree Dialog (`src/ui/PreferencesDialog.h/.cpp`) matching PotPlayer baseline (751x564 px).
+   - Implement Frame Capture tool (`Ctrl+E` instant frame save to PNG with/without subtitle overlays).
+   - Implement Open URL Dialog (`Ctrl+U`) supporting direct HTTP, HTTPS, and HLS `.m3u8` streams.
+   - Implement Hardware Decoding Selection UI and persistence (D3D11VA, DXVA2, copy-back, auto, off).
+2. Add automated unit/integration tests for M7 features and verify 100% CTest pass.
+3. Capture runtime evidence screenshot and generate M7 completion report.
 
 ## Active Decisions
 
