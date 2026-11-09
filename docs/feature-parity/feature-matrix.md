@@ -1,98 +1,47 @@
 # PotPlayer Feature Parity Matrix
 
 > **Application:** JonakiPlayer vs. Daum PotPlayer 64-bit  
-> **Status:** Baseline Established (M0)  
+> **Status:** M1 Reconnaissance Baseline Established  
 > **Legend:**  
 > - 🟢 **Full Parity:** Fully implemented and verified with tests.  
 > - 🟡 **Partial Parity:** Implemented with minor gaps or in progress.  
-> - ⚪ **Planned:** On roadmap, not yet implemented.  
-> - 🔴 **Deferred / Unsupported:** Out of scope or unsupported on platform.  
+> - ⚪ **Planned:** On roadmap, evidence gathered, pending implementation phase.  
+> - 🔴 **Deferred / Unsupported:** Out of scope (e.g. proprietary Kakao broadcasts).  
 
 ---
 
-## 1. Playback Engine
+## Comprehensive Feature Inventory & Parity Register
 
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Video Playback (MP4, MKV, AVI, MOV, TS) | Yes | ⚪ Planned (M2) | Via `libmpv` / FFmpeg |
-| Audio Playback (MP3, FLAC, AAC, OGG, OPUS) | Yes | ⚪ Planned (M2) | Via `libmpv` |
-| Hardware Acceleration (DXVA2 / D3D11VA) | Yes | ⚪ Planned (M6) | Native Windows decoders |
-| Hardware Acceleration (VAAPI / NVDEC) | N/A (Linux) | ⚪ Planned (M6) | Native Linux decoders |
-| Frame Stepping (Next / Prev Frame) | Yes (Hotkeys: `D`, `F`) | ⚪ Planned (M2) | Native `mpv` frame-step |
-| Playback Speed Control (0.2x – 3.0x) | Yes (Hotkeys: `C`, `X`, `Z`) | ⚪ Planned (M2) | With pitch scaletempo |
-| A-B Repeat Loop | Yes (Hotkeys: `[`, `]`, `\`) | ⚪ Planned (M7) | Precise time loops |
-| Resume from Last Position | Yes | ⚪ Planned (M4) | Stored in settings |
-| Playback History | Yes | ⚪ Planned (M4) | SQLite or INI store |
-
----
-
-## 2. User Interface & Window Management
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Frameless Custom Skinned Window | Yes | ⚪ Planned (M3) | Native aero snap & resize |
-| Skin Engine (`.dsf` parser & renderer) | Yes | ⚪ Planned (M3) | Custom Qt skin engine |
-| Seek Slider with Chapter Marks | Yes | ⚪ Planned (M3) | Custom QSlider subclass |
-| Time Indicator (Elapsed / Total) | Yes | ⚪ Planned (M3) | Formatted `hh:mm:ss` |
-| Volume Slider & Mute Toggle | Yes | ⚪ Planned (M3) | Linear / logarithmic scale |
-| Autohide Controls in Fullscreen | Yes | ⚪ Planned (M3) | Mouse movement timer |
-| Fullscreen & Windowed Modes | Yes (Hotkey: `Enter`) | ⚪ Planned (M3) | Qt fullscreen state |
-| Comprehensive Context Menu | Yes | ⚪ Planned (M3) | Follows `SimpleMenu.xml` |
-
----
-
-## 3. Playlist Management
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Dockable / Collapsible Playlist Panel | Yes (Hotkey: `F8`) | ⚪ Planned (M4) | Right side drawer |
-| Drag-and-Drop Media / Folders | Yes | ⚪ Planned (M4) | Qt drag-drop events |
-| Multi-Select, Delete, Clear | Yes | ⚪ Planned (M4) | QTreeWidget / QListView |
-| Shuffle & Repeat Modes | Yes | ⚪ Planned (M4) | Sequential / Random queue |
-| Save / Load Playlist Files (M3U, PLS) | Yes | ⚪ Planned (M4) | Standard parsers |
-
----
-
-## 4. Subtitle System
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Embedded Subtitles (SRT, ASS, PGS) | Yes | ⚪ Planned (M5) | Handled via `libmpv` |
-| External Subtitle Auto-Load | Yes | ⚪ Planned (M5) | Same-basename matching |
-| Subtitle Synchronization (`<`, `>`) | Yes (0.5s step) | ⚪ Planned (M5) | Adjust subtitle delay |
-| Subtitle Font / Size / Color Customization | Yes | ⚪ Planned (M5) | libass property overrides |
-| Second Subtitle Stream Display | Yes | ⚪ Planned (M5) | Dual subtitle rendering |
-
----
-
-## 5. Audio Processing
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Audio Stream Selection | Yes | ⚪ Planned (M6) | Track selector |
-| Audio Output Device Selection | Yes | ⚪ Planned (M6) | WASAPI / PipeWire |
-| 10-Band Graphic Equalizer | Yes | ⚪ Planned (M6) | mpv `af=equalizer` |
-| Volume Normalization | Yes | ⚪ Planned (M6) | mpv `dynaudnorm` |
-| Audio Delay Adjustment (`Shift + <`, `Shift + >`) | Yes | ⚪ Planned (M6) | Dynamic offset |
-
----
-
-## 6. Video Processing
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Aspect Ratio Presets | Yes | ⚪ Planned (M6) | 16:9, 4:3, original, fill |
-| Color Controls (Brightness, Contrast, etc.) | Yes | ⚪ Planned (M6) | mpv video eq controls |
-| Deinterlacing (YADIF, etc.) | Yes | ⚪ Planned (M6) | Hardware / software deint |
-| Video Rotation / Flip | Yes | ⚪ Planned (M6) | 90°, 180°, 270°, H/V flip |
-| Frame Capture (PNG, JPG) | Yes (Hotkey: `Ctrl+E`) | ⚪ Planned (M7) | mpv `screenshot` command |
-
----
-
-## 7. Keyboard & Mouse Customization
-
-| Feature | Reference (PotPlayer) | JonakiPlayer Status | Notes |
-|---|---|---|---|
-| Full PotPlayer Default Keymap | Yes | ⚪ Planned (M4) | Space=Pause, Left/Right=Seek |
-| Configurable Hotkey Manager | Yes | ⚪ Planned (M4) | User shortcut editor |
-| Mouse Wheel Volume / Seek | Yes | ⚪ Planned (M4) | Configurable wheel actions |
+| ID | Category | Feature Name | Priority | Confidence | Evidence Status | Planned Milestone | Notes |
+|---|---|---|---|---|---|---|---|
+| **P-01** | Playback | Multi-format local playback (MKV, MP4, AVI, TS, WebM) | Must-have | High | [DIRECTLY-OBSERVED] | M2 | libmpv / FFmpeg `ffcodec64.dll` |
+| **P-02** | Playback | Frame stepping forward (`F`) and reverse (`D`) | Must-have | High | [DIRECTLY-OBSERVED] | M2 | mpv `frame-step` / `frame-back-step` |
+| **P-03** | Playback | Playback speed control (0.2x–3.0x, 0.1x step, pitch scale) | Must-have | High | [DIRECTLY-OBSERVED] | M2 | mpv `speed` with `scaletempo2` |
+| **P-04** | Playback | A-B Repeat loop (`[`, `]`, `\`) with timeline markers | Should-have | High | [DIRECTLY-OBSERVED] | M7 | Points render on seekbar |
+| **P-05** | Playback | Resume from last position & history store | Must-have | High | [DIRECTLY-OBSERVED] | M4 | Matches `MediaInfo.sdb` |
+| **P-06** | Playback | Hardware acceleration (D3D11VA, DXVA2, VAAPI, NVDEC) | Must-have | High | [DIRECTLY-OBSERVED] | M6 | Native GPU decode |
+| **UI-01** | Window | Frameless skinnable main window (723 x 399 default) | Must-have | High | [DIRECTLY-OBSERVED] | M3 | Win32 aero-snap + Qt frameless |
+| **UI-02** | Window | Custom title bar (31px) with menu & system buttons | Must-have | High | [DIRECTLY-OBSERVED] | M3 | Sliced from `Main.png` / `TopCommon.txt` |
+| **UI-03** | Window | Timeline seekbar with buffer range & chapter markers | Must-have | High | [DIRECTLY-OBSERVED] | M3 | Sliced from `Main.png` / `BottomVideo.txt` |
+| **UI-04** | Window | Volume slider (70x10px) with mute button toggle | Must-have | High | [DIRECTLY-OBSERVED] | M3 | `CMD_VOLUME_CTRL` / `ID_AUDIO_MUTE` |
+| **UI-05** | Window | Auto-hide controls in fullscreen mode | Must-have | High | [DIRECTLY-OBSERVED] | M3 | Mouse movement idle timer |
+| **UI-06** | Window | Preferences dialog (751 x 564) with tree navigation | Must-have | High | [DIRECTLY-OBSERVED] | M7 | Matches 184 dialog hierarchy |
+| **UI-07** | Menu | Complete context menu (886 entries from `[MenuString]`) | Must-have | High | [DIRECTLY-OBSERVED] | M3 | Loaded from `menu_hierarchy.json` |
+| **PL-01** | Playlist | Collapsible / dockable playlist drawer (`F8`) | Must-have | High | [DIRECTLY-OBSERVED] | M4 | Right-side sliding panel |
+| **PL-02** | Playlist | Daum playlist format (`.dpl`) parser and serializer | Must-have | High | [DIRECTLY-OBSERVED] | M4 | Reads/writes `DAUMPLAYLIST` schema |
+| **PL-03** | Playlist | Drag-and-drop file, folder, and URL handling | Must-have | High | [DIRECTLY-OBSERVED] | M4 | Recursive directory scanning |
+| **PL-04** | Playlist | Queue repeat (One/All/Stop) and shuffle playback | Must-have | High | [DIRECTLY-OBSERVED] | M4 | Matches `PlaybackMode` registry setting |
+| **SUB-01** | Subtitles | Embedded subtitle track auto-detection & switching | Must-have | High | [DIRECTLY-OBSERVED] | M5 | Handled via libmpv track selection |
+| **SUB-02** | Subtitles | External subtitle matching (same-basename auto-load) | Must-have | High | [DIRECTLY-OBSERVED] | M5 | Controlled by `OpenWithSameName=2` |
+| **SUB-03** | Subtitles | Real-time subtitle delay adjustment (`<` and `>`) | Must-have | High | [DIRECTLY-OBSERVED] | M5 | 0.5s offset increment |
+| **SUB-04** | Subtitles | Subtitle style string parsing (`CaptionStyle`) | Should-have | High | [DIRECTLY-OBSERVED] | M5 | Font, outline, shadow, alignment |
+| **AUD-01** | Audio | 10-Band graphic equalizer (31Hz to 16kHz) | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=equalizer` |
+| **AUD-02** | Audio | Volume normalization filter | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=dynaudnorm` |
+| **AUD-03** | Audio | Real-time audio delay adjustment (`Shift+<`, `Shift+>`) | Must-have | High | [DIRECTLY-OBSERVED] | M6 | 0.05s offset increment |
+| **VID-01** | Video | Aspect ratio modes (Default, 16:9, 4:3, Fill, Stretch) | Must-have | High | [DIRECTLY-OBSERVED] | M6 | Video scaler property override |
+| **VID-02** | Video | Hardware & software deinterlacing | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `deinterlace=yes` |
+| **VID-03** | Video | Frame capture to PNG/JPG (`Ctrl+E`) | Should-have | High | [DIRECTLY-OBSERVED] | M7 | mpv `screenshot` command |
+| **ADV-01** | Streaming | HTTP/HTTPS/HLS network stream playback | Should-have | High | [DIRECTLY-OBSERVED] | M7 | Stream loading via URL |
+| **ADV-02** | Streaming | YouTube URL playback via yt-dlp integration | Nice-to-have | Medium | [INFERRED] | M7 | yt-dlp hook in libmpv |
+| **OUT-01** | Cloud | Daum/Kakao live broadcast streaming & chat room | Out-of-scope | Low | [UNRESOLVED] | Deferred | Commercial proprietary service |
+| **OUT-02** | Ads | Commercial advertising popups & banners | Out-of-scope | None | [DIRECTLY-OBSERVED] | Excluded | Adware non-goal (SPEC.md) |
