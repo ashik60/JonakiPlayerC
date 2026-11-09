@@ -1,0 +1,46 @@
+# Technical Decisions Register (TDR / ADR)
+
+This document tracks architectural and technical decisions made during the development of **JonakiPlayer**, along with context, alternatives considered, and rationale.
+
+---
+
+## TDR-001: Project Architecture and Technology Selection
+
+- **Status:** Accepted
+- **Date:** 2026-11-09
+- **Context:** JonakiPlayer requires high-performance multimedia playback, cross-platform UI fidelity matching Daum PotPlayer, and maintainable native desktop code on Windows 10/11 and Linux.
+- **Alternatives Considered:**
+  1. *Electron + HTML5/WebAssembly*: Rejected due to high memory consumption, high idle CPU, lack of low-level Direct3D/WASAPI audio pipeline control, and sluggish window resize.
+  2. *C# / .NET MAUI / WPF*: Rejected due to poor Linux parity, heavy runtime dependency, and complex native multimedia filter interop.
+  3. *C++20 + Qt 6 + libmpv + FFmpeg*: **Selected**. Native performance, low idle footprint, rock-solid video/audio rendering pipelines, rich widget toolkit capable of custom painting/skinning, and identical source code compiling on Windows and Linux.
+- **Decision:** Adopt C++20, Qt 6 (Widgets), CMake, Ninja, libmpv, and FFmpeg as the core engineering stack.
+
+---
+
+## TDR-002: Skin Engine Architecture (Clean-Room PotPlayer Parity)
+
+- **Status:** Accepted
+- **Date:** 2026-11-09
+- **Context:** PotPlayer's primary visual identity comes from its custom skinnable frameless interface (`.dsf` format).
+- **Alternatives Considered:**
+  1. *Hardcoding Qt QSS/StyleSheet to look roughly like PotPlayer*: Rejected as it fails pixel-level fidelity, breaks custom DPI scaling, and deviates from PotPlayer's dynamic element behavior.
+  2. *Dynamic Clean-Room XML Skin Parser*: **Selected**. Reverse engineering of `Default.dsf` confirmed it is a standard ZIP archive containing XML layout specifications (`BottomVideo.txt`, `AudioSkin.xml`, `ChildSkin.xml`) and texture atlas bitmaps (`Main.png`, `Control.png`). A dedicated `SkinRenderer` parses these layouts and paints UI controls using exact sprite offsets.
+- **Decision:** Implement an independent `SkinParser` and `SkinRenderer` in C++/Qt to render PotPlayer `.dsf` skins cleanly.
+
+---
+
+## TDR-003: Playback Engine Decoupling
+
+- **Status:** Accepted
+- **Date:** 2026-11-09
+- **Context:** The application needs a robust playback subsystem that can handle all video/audio formats, hardware decoding, stream playback, and subtitle synchronization without tightly coupling the UI to mpv specifics.
+- **Decision:** Encapsulate playback behind the `IPlaybackEngine` abstract C++ interface. Implement `MpvPlaybackEngine` using `libmpv`'s C API and render context. This allows future pluggable backends (e.g., custom DirectShow/MediaFoundation or GStreamer) if required.
+
+---
+
+## TDR-004: Windows Development Toolchain via MSYS2 UCRT64
+
+- **Status:** Accepted
+- **Date:** 2026-11-09
+- **Context:** Need a unified, reproducible C++20 and Qt6/libmpv toolchain on Windows that matches Linux packaging paradigms.
+- **Decision:** Standardize on MSYS2 UCRT64 (`mingw-w64-ucrt-x86_64`) for local builds and CI, providing precompiled GCC 14, Qt 6.x, CMake, Ninja, libmpv, and FFmpeg, while maintaining standard MSVC CMake build compatibility.
