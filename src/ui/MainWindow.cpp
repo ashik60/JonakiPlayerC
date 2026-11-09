@@ -42,7 +42,14 @@ MainWindow::MainWindow(QWidget* parent)
     setupShortcuts();
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow() {
+    if (m_videoWidget) {
+        m_videoWidget->cleanupRenderContext();
+    }
+    if (m_engine) {
+        m_engine->shutdown();
+    }
+}
 
 IPlaybackEngine* MainWindow::engine() const {
     return m_engine.get();

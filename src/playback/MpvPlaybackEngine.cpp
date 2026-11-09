@@ -43,6 +43,8 @@ bool MpvPlaybackEngine::initialize() {
     mpv_observe_property(m_mpv, 5, "volume", MPV_FORMAT_DOUBLE);
     mpv_observe_property(m_mpv, 6, "mute", MPV_FORMAT_FLAG);
     mpv_observe_property(m_mpv, 7, "speed", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(m_mpv, 8, "hwdec-current", MPV_FORMAT_STRING);
+    mpv_observe_property(m_mpv, 9, "video-codec", MPV_FORMAT_STRING);
 
     int status = mpv_initialize(m_mpv);
     if (status < 0) {
@@ -196,6 +198,18 @@ void MpvPlaybackEngine::handleMpvEvent(void* eventPtr) {
                 if (prop->format == MPV_FORMAT_DOUBLE) {
                     std::lock_guard<std::mutex> lock(m_stateMutex);
                     m_speed = *static_cast<double*>(prop->data);
+                }
+            } else if (std::strcmp(prop->name, "hwdec-current") == 0) {
+                if (prop->format == MPV_FORMAT_STRING) {
+                    const char* hw = *static_cast<char**>(prop->data);
+                    std::lock_guard<std::mutex> lock(m_stateMutex);
+                    m_hwdecActive = hw ? hw : "no";
+                }
+            } else if (std::strcmp(prop->name, "video-codec") == 0) {
+                if (prop->format == MPV_FORMAT_STRING) {
+                    const char* vc = *static_cast<char**>(prop->data);
+                    std::lock_guard<std::mutex> lock(m_stateMutex);
+                    m_videoCodec = vc ? vc : "";
                 }
             }
             break;
@@ -519,6 +533,16 @@ void MpvPlaybackEngine::setAspectRatio(const std::string& ratio) {
 std::string MpvPlaybackEngine::getAspectRatio() const {
     std::lock_guard<std::mutex> lock(m_stateMutex);
     return m_aspectRatio;
+}
+
+std::string MpvPlaybackEngine::getHwdecActive() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_hwdecActive;
+}
+
+std::string MpvPlaybackEngine::getVideoCodec() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_videoCodec;
 }
 
 } // namespace Jonaki

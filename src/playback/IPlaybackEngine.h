@@ -96,6 +96,10 @@ public:
     virtual void setAspectRatio(const std::string& ratio) = 0; // e.g., "default", "16:9", "4:3"
     virtual std::string getAspectRatio() const = 0;
 
+    // --- Hardware Decoding Introspection ---
+    virtual std::string getHwdecActive() const = 0;
+    virtual std::string getVideoCodec() const = 0;
+
     // --- Callbacks & Observers ---
     using StateChangedCallback = std::function<void(PlaybackState)>;
     using TimeChangedCallback = std::function<void(double currentTime, double duration)>;

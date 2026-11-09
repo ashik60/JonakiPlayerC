@@ -113,6 +113,9 @@ public:
     void setAspectRatio(const std::string& ratio) override { m_aspectRatio = ratio; }
     std::string getAspectRatio() const override { return m_aspectRatio; }
 
+    std::string getHwdecActive() const override { return "no"; }
+    std::string getVideoCodec() const override { return "h264"; }
+
     void setOnStateChanged(StateChangedCallback cb) override { m_onStateChanged = std::move(cb); }
     void setOnTimeChanged(TimeChangedCallback cb) override { m_onTimeChanged = std::move(cb); }
     void setOnTrackListChanged(TrackListChangedCallback cb) override { m_onTrackListChanged = std::move(cb); }

@@ -27,6 +27,7 @@ public:
     ~VideoOpenGLWidget() override;
 
     void setEngine(MpvPlaybackEngine* engine);
+    void cleanupRenderContext();
 
 protected:
     void initializeGL() override;

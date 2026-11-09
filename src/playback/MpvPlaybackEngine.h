@@ -66,6 +66,8 @@ public:
     // --- Video Controls ---
     void setAspectRatio(const std::string& ratio) override;
     std::string getAspectRatio() const override;
+    std::string getHwdecActive() const override;
+    std::string getVideoCodec() const override;
 
     // --- Callbacks ---
     void setOnStateChanged(StateChangedCallback cb) override { m_onStateChanged = std::move(cb); }
@@ -101,6 +103,8 @@ private:
     double m_subDelay = 0.0;
     double m_audioDelay = 0.0;
     std::string m_aspectRatio = "default";
+    std::string m_hwdecActive = "no";
+    std::string m_videoCodec;
     std::vector<TrackInfo> m_tracks;
 
     StateChangedCallback m_onStateChanged;

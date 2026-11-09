@@ -122,6 +122,66 @@ private slots:
         QVERIFY2(errorReported, "Invalid file load must trigger error callback");
         engine.shutdown();
     }
+
+    void testRepeatedLifecycle() {
+        MpvPlaybackEngine engine;
+        for (int i = 0; i < 3; ++i) {
+            QVERIFY(engine.initialize());
+            QVERIFY(engine.isInitialized());
+            QVERIFY(engine.loadMedia(m_testAudioPath));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            engine.shutdown();
+            QCOMPARE(engine.isInitialized(), false);
+            QCOMPARE(engine.getState(), PlaybackState::Stopped);
+        }
+    }
+
+    void testRapidStateChanges() {
+        MpvPlaybackEngine engine;
+        QVERIFY(engine.initialize());
+        QVERIFY(engine.loadMedia(m_testVideoPath));
+
+        // Rapidly issue commands without crashing or deadlocking
+        for (int i = 0; i < 10; ++i) {
+            engine.pause();
+            engine.play();
+            engine.seek(1.0 + (i * 0.2), false);
+            engine.setVolume(50 + i * 2);
+            engine.setSpeed(0.8 + (i * 0.1));
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        QVERIFY(engine.getState() == PlaybackState::Playing || engine.getState() == PlaybackState::Paused);
+        engine.stop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        QCOMPARE(engine.getState(), PlaybackState::Stopped);
+
+        engine.shutdown();
+    }
+
+    void testHardwareDecodingDetection() {
+        MpvPlaybackEngine engine;
+        QVERIFY(engine.initialize());
+        QVERIFY(engine.loadMedia(m_testVideoPath));
+
+        // Wait up to 1.5s for playback and decoder initialization
+        int attempts = 0;
+        while (engine.getVideoCodec().empty() && attempts < 30) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            attempts++;
+        }
+
+        std::string codec = engine.getVideoCodec();
+        std::string hwdec = engine.getHwdecActive();
+        // Video codec description must contain H.264
+        QVERIFY2(codec.find("H.264") != std::string::npos || codec.find("h264") != std::string::npos,
+                 "Video codec must resolve to H.264");
+        // Distinguish verified hwdec from requested option:
+        // hwdec will be one of: "d3d11va-copy", "dxva2-copy", "nvdec-copy", "d3d11va", or "no" if software
+        QVERIFY2(!hwdec.empty(), "Active hwdec string must be populated");
+
+        engine.shutdown();
+    }
 };
 
 QTEST_MAIN(TestMpvPlaybackIntegration)

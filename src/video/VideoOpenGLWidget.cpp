@@ -18,14 +18,21 @@ VideoOpenGLWidget::VideoOpenGLWidget(QWidget* parent)
 }
 
 VideoOpenGLWidget::~VideoOpenGLWidget() {
-    makeCurrent();
+    cleanupRenderContext();
+}
+
+void VideoOpenGLWidget::cleanupRenderContext() {
 #if defined(HAVE_MPV)
     if (m_mpvGL) {
+        makeCurrent();
+        // Remove update callback before destroying context to prevent dangling callbacks
+        mpv_render_context_set_update_callback(m_mpvGL, nullptr, nullptr);
         mpv_render_context_free(m_mpvGL);
         m_mpvGL = nullptr;
+        doneCurrent();
+        Logger::info("mpv OpenGL render context cleaned up cleanly.");
     }
 #endif
-    doneCurrent();
 }
 
 void VideoOpenGLWidget::setEngine(MpvPlaybackEngine* engine) {
