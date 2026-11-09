@@ -87,6 +87,11 @@ public:
     virtual void setSubtitleDelay(double seconds) = 0;
     virtual double getSubtitleDelay() const = 0;
     virtual void loadExternalSubtitle(const std::string& subPath) = 0;
+    virtual void setSubtitleVisibility(bool visible) = 0;
+    virtual bool isSubtitleVisible() const = 0;
+
+    // --- On-Screen Display (OSD) ---
+    virtual void showOsdMessage(const std::string& text, int durationMs = 1500) = 0;
 
     // --- Audio Delay ---
     virtual void setAudioDelay(double seconds) = 0;

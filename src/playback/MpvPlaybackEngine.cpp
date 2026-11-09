@@ -34,6 +34,16 @@ bool MpvPlaybackEngine::initialize() {
     mpv_set_option_string(m_mpv, "keep-open", "always");
     mpv_set_option_string(m_mpv, "hwdec", "auto-safe");
     mpv_set_option_string(m_mpv, "audio-pitch-correction", "yes");
+    mpv_set_option_string(m_mpv, "sub-auto", "exact");
+    mpv_set_option_string(m_mpv, "sub-font", "sans-serif");
+    mpv_set_option_string(m_mpv, "sub-font-size", "38");
+    mpv_set_option_string(m_mpv, "sub-color", "#FFFFFFFF");
+    mpv_set_option_string(m_mpv, "sub-border-color", "#FF000000");
+    mpv_set_option_string(m_mpv, "sub-border-size", "2.0");
+    mpv_set_option_string(m_mpv, "osd-font", "Tahoma");
+    mpv_set_option_string(m_mpv, "osd-font-size", "24");
+    mpv_set_option_string(m_mpv, "osd-color", "#FFFFFFFF");
+    mpv_set_option_string(m_mpv, "osd-border-color", "#FF000000");
 
     // Observe properties
     mpv_observe_property(m_mpv, 1, "time-pos", MPV_FORMAT_DOUBLE);
@@ -501,6 +511,35 @@ void MpvPlaybackEngine::loadExternalSubtitle(const std::string& subPath) {
         const char* cmd[] = {"sub-add", subPath.c_str(), "select", nullptr};
         mpv_command_async(m_mpv, 0, cmd);
     }
+#endif
+}
+
+void MpvPlaybackEngine::setSubtitleVisibility(bool visible) {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        int flag = visible ? 1 : 0;
+        mpv_set_property_async(m_mpv, 0, "sub-visibility", MPV_FORMAT_FLAG, &flag);
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_subVisibility = visible;
+}
+
+bool MpvPlaybackEngine::isSubtitleVisible() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_subVisibility;
+}
+
+void MpvPlaybackEngine::showOsdMessage(const std::string& text, int durationMs) {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        std::string durStr = std::to_string(durationMs);
+        const char* cmd[] = {"show-text", text.c_str(), durStr.c_str(), nullptr};
+        mpv_command_async(m_mpv, 0, cmd);
+    }
+#else
+    (void)text;
+    (void)durationMs;
 #endif
 }
 

@@ -106,6 +106,12 @@ public:
     void setSubtitleDelay(double seconds) override { m_subDelay = seconds; }
     double getSubtitleDelay() const override { return m_subDelay; }
     void loadExternalSubtitle(const std::string& subPath) override { (void)subPath; }
+    void setSubtitleVisibility(bool visible) override { m_subVisibility = visible; }
+    bool isSubtitleVisible() const override { return m_subVisibility; }
+
+    void showOsdMessage(const std::string& text, int durationMs = 1500) override {
+        (void)text; (void)durationMs;
+    }
 
     void setAudioDelay(double seconds) override { m_audioDelay = seconds; }
     double getAudioDelay() const override { return m_audioDelay; }
@@ -133,6 +139,7 @@ private:
     int m_volume = 100;
     bool m_mute = false;
     double m_subDelay = 0.0;
+    bool m_subVisibility = true;
     double m_audioDelay = 0.0;
     std::string m_aspectRatio = "default";
     std::vector<TrackInfo> m_tracks;

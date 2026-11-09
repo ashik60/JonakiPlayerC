@@ -81,3 +81,26 @@ target_link_libraries(PlaylistTest PRIVATE
 )
 
 add_test(NAME PlaylistTest COMMAND PlaylistTest)
+
+# 6. Subtitles & OSD Unit Tests
+add_executable(SubtitleTest
+    unit/test_subtitles.cpp
+    ../src/subtitles/SubtitleManager.cpp
+    ../src/playback/MpvPlaybackEngine.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(SubtitleTest PRIVATE
+    Qt6::Core
+    Qt6::Test
+    ${MPV_LIBRARIES}
+)
+
+target_compile_definitions(SubtitleTest PRIVATE HAVE_MPV=1)
+
+if(WIN32)
+    target_compile_definitions(SubtitleTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(SubtitleTest PRIVATE dwmapi shell32 user32)
+endif()
+
+add_test(NAME SubtitleTest COMMAND SubtitleTest)

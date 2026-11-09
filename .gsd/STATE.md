@@ -1,31 +1,31 @@
 ---
-updated: 2026-11-09T09:55:00+06:00
+updated: 2026-11-09T10:05:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M4 - Playlist & Interaction System
-**Phase:** Phase 4 - Playlist & Persistence
+**Milestone:** M5 - Subtitle Engine & OSD System
+**Phase:** Phase 5 - Subtitles & OSD
 **Status:** completed
-**Plan:** M4 Playlist & Interaction System (Completed & Verified)
+**Plan:** M5 Subtitle Engine & OSD System (Completed & Verified)
 
 ## Last Action
 
-- Audited M3 skin engine directives, recording unsupported PotPlayer directives as unresolved in `docs/reverse-engineering/skin-compatibility-audit.md`.
-- Decoupled parity classification into Geometric, Visual, and Behavioral tiers in Feature Parity Matrix.
-- Implemented `DplPlaylistParser`: Round-trip compatible Daum PotPlayer `.dpl` parser and serializer preserving unknown/future metadata fields.
-- Implemented `ResumeStore`: Clean-room SQLite persistence engine matching PotPlayer's `MediaInfo.sdb` schema and percent-encoded keys.
-- Implemented `PlaylistModel` and `PlaylistController`: Queue management, sequential / repeat / shuffle orders, folder recursive scanning, auto-resume position restoration upon playback start.
-- Implemented `PlaylistDrawer`: 280px dockable / collapsible sliding drawer, expanding window from 723px to 1003px while preserving video viewport, toggled via `F8`.
-- Added unit and round-trip tests (`PlaylistTest`) and maintained 100% CTest pass rate across 5 suites.
-- Verified runtime execution with playlist open, capturing `docs/milestones/evidence/m4_jonaki_with_playlist.png`.
+- Performed preliminary audit of M4 playlist persistence, non-destructive field retention, and URI keying for Windows/UNC/URLs.
+- Implemented `SubtitleManager`: Directory scanning for adjacent subtitles matching media basename, format recognition (`.srt`, `.ass`, `.vtt`, `.sub`), delay adjustments (+/-0.5s), and visibility toggling.
+- Enhanced `IPlaybackEngine` and `MpvPlaybackEngine` with `setSubtitleDelay()`, `setSubtitleVisibility()`, and `showOsdMessage()` using libmpv's built-in OSD and `libass` rendering pipeline.
+- Added subtitle context menu actions and PotPlayer keyboard shortcuts (`<`, `>`, `/`, `Alt+H`, `Alt+O`).
+- Created synthetic test assets for SRT, ASS, VTT, and multilingual CJK/Korean subtitles.
+- Implemented automated test target `SubtitleTest`, passing 100% alongside all previous 5 test targets (6/6 targets passing in CTest).
+- Verified runtime execution, capturing screenshot at `docs/milestones/evidence/m5_jonaki_subtitles_osd.png`.
+- Published `docs/milestones/milestone-reports/milestone_M5_completion_report.md` and updated Feature Parity Matrix.
 
 ## Next Steps
 
-1. Review M4 completion report and prepare for Milestone M5 (Subtitle Engine & OSD System).
-2. Begin M5: Embedded subtitle track selection, external subtitle matching (`.srt`, `.ass`, `.vtt` with same basename), real-time subtitle delay adjustment (`<` and `>`), and custom OSD styling.
+1. Review M5 completion report and prepare for Milestone M6 (Audio & Video Systems).
+2. Begin M6: 10-Band graphic equalizer (31Hz–16kHz), dynamic audio normalization filter (`dynaudnorm`), hardware/software deinterlacing, audio delay adjustment (`Shift+<` / `Shift+>`), and video aspect ratio scaling modes.
 
 ## Active Decisions
 
@@ -38,10 +38,11 @@ updated: 2026-11-09T09:55:00+06:00
 | TDR-005 Video Surface Architecture | `QOpenGLWidget` + `mpv_render_context` (OpenGL FBO) | 2026-11-09 | M2, M3, M6 |
 | TDR-006 Frameless Window Integration | Win32 `WM_NCHITTEST` + Qt frameless widget hierarchy | 2026-11-09 | M3, M4 |
 | TDR-007 Playlist & Resume Schema | Daum `.dpl` parser + SQLite `MediaInfo.sdb` | 2026-11-09 | M4, M7 |
+| TDR-008 Subtitle & OSD Pipeline | `libmpv` native `libass` + OSD overlay via `show-text` | 2026-11-09 | M5, M6 |
 
 ## Blockers
 
-*None. M4 playlist and interaction system is fully operational and verified.*
+*None. Subtitle and OSD systems are fully operational and verified.*
 
 ## Concerns
 

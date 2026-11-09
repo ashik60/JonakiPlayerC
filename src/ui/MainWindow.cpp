@@ -6,6 +6,7 @@
 #include "PlaylistDrawer.h"
 #include "../playlist/PlaylistController.h"
 #include "../playlist/ResumeStore.h"
+#include "../subtitles/SubtitleManager.h"
 #include "../core/Constants.h"
 #include "../core/Logger.h"
 #include "../settings/SettingsManager.h"
@@ -62,6 +63,7 @@ void MainWindow::setupEngine() {
     ResumeStore::instance().initialize(sdbPath.toStdString());
 
     m_playlistController = std::make_unique<PlaylistController>(m_engine.get(), this);
+    m_subtitleManager = std::make_unique<SubtitleManager>(m_engine.get());
 }
 
 void MainWindow::setupUi() {
@@ -144,6 +146,9 @@ void MainWindow::connectSignals() {
         QString file = QFileDialog::getOpenFileName(this, "Open Media File");
         if (!file.isEmpty()) {
             m_engine->loadMedia(file.toStdString());
+            if (m_subtitleManager) {
+                m_subtitleManager->autoLoadMatchingSubtitles(file.toStdString());
+            }
         }
     });
     connect(m_controlBar, &BottomControlBar::seekMoved, this, [this](int pos) {
@@ -256,6 +261,31 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             break;
         case Qt::Key_PageUp:
             if (m_playlistController) m_playlistController->playPrevious();
+            break;
+        case Qt::Key_Less:
+        case Qt::Key_Comma:
+            if (m_subtitleManager) m_subtitleManager->adjustDelay(-0.5);
+            break;
+        case Qt::Key_Greater:
+        case Qt::Key_Period:
+            if (m_subtitleManager) m_subtitleManager->adjustDelay(0.5);
+            break;
+        case Qt::Key_Slash:
+            if (m_subtitleManager) m_subtitleManager->resetDelay();
+            break;
+        case Qt::Key_H:
+            if (event->modifiers() & Qt::AltModifier) {
+                if (m_subtitleManager) m_subtitleManager->toggleVisibility();
+            }
+            break;
+        case Qt::Key_O:
+            if (event->modifiers() & Qt::AltModifier) {
+                QString file = QFileDialog::getOpenFileName(this, "Open Subtitle File", "", "Subtitles (*.srt *.ass *.ssa *.vtt *.sub *.smi)");
+                if (!file.isEmpty() && m_engine) {
+                    m_engine->loadExternalSubtitle(file.toStdString());
+                    m_engine->showOsdMessage("Subtitle loaded: " + QFileInfo(file).fileName().toStdString());
+                }
+            }
             break;
         case Qt::Key_Return:
         case Qt::Key_Enter:

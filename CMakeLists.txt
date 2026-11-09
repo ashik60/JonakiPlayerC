@@ -106,6 +106,11 @@ set(PLAYLIST_SOURCES
     src/playlist/PlaylistController.h
 )
 
+set(SUBTITLE_SOURCES
+    src/subtitles/SubtitleManager.cpp
+    src/subtitles/SubtitleManager.h
+)
+
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -139,6 +144,7 @@ add_executable(JonakiPlayer
     ${INPUT_SOURCES}
     ${PLAYBACK_SOURCES}
     ${PLAYLIST_SOURCES}
+    ${SUBTITLE_SOURCES}
     ${VIDEO_SOURCES}
     ${UI_SOURCES}
 )

@@ -13,6 +13,7 @@ class BottomControlBar;
 class FramelessWindowHelper;
 class PlaylistController;
 class PlaylistDrawer;
+class SubtitleManager;
 
 /**
  * @brief Main window for JonakiPlayer.
@@ -55,6 +56,8 @@ private:
 
     std::unique_ptr<PlaylistController> m_playlistController;
     PlaylistDrawer* m_playlistDrawer = nullptr;
+
+    std::unique_ptr<SubtitleManager> m_subtitleManager;
 };
 
 } // namespace Jonaki

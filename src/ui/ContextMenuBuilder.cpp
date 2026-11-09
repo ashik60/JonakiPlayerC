@@ -84,9 +84,39 @@ std::unique_ptr<QMenu> ContextMenuBuilder::buildMenu(MainWindow* parentWindow) {
         parentWindow->engine()->setAspectRatio("4:3");
     });
 
+    // 5. Subtitles Submenu
+    auto* subMenu = menu->addMenu("Subtitles");
+    subMenu->addAction("Load Subtitle...\tAlt+O", [parentWindow]() {
+        QString file = QFileDialog::getOpenFileName(parentWindow, "Open Subtitle File", "", "Subtitles (*.srt *.ass *.ssa *.vtt *.sub *.smi)");
+        if (!file.isEmpty()) {
+            parentWindow->engine()->loadExternalSubtitle(file.toStdString());
+            parentWindow->engine()->showOsdMessage("Subtitle loaded: " + QFileInfo(file).fileName().toStdString());
+        }
+    });
+    subMenu->addAction("Show/Hide Subtitles\tAlt+H", [parentWindow]() {
+        bool vis = !parentWindow->engine()->isSubtitleVisible();
+        parentWindow->engine()->setSubtitleVisibility(vis);
+        parentWindow->engine()->showOsdMessage(vis ? "Subtitles: Show" : "Subtitles: Hide");
+    });
+    subMenu->addSeparator();
+    subMenu->addAction("Subtitle Sync: Slower (-0.5s)\t<", [parentWindow]() {
+        double d = parentWindow->engine()->getSubtitleDelay() - 0.5;
+        parentWindow->engine()->setSubtitleDelay(d);
+        parentWindow->engine()->showOsdMessage("Subtitle Sync: " + std::to_string(d) + " s");
+    });
+    subMenu->addAction("Subtitle Sync: Faster (+0.5s)\t>", [parentWindow]() {
+        double d = parentWindow->engine()->getSubtitleDelay() + 0.5;
+        parentWindow->engine()->setSubtitleDelay(d);
+        parentWindow->engine()->showOsdMessage("Subtitle Sync: " + std::to_string(d) + " s");
+    });
+    subMenu->addAction("Subtitle Sync: Reset\t/", [parentWindow]() {
+        parentWindow->engine()->setSubtitleDelay(0.0);
+        parentWindow->engine()->showOsdMessage("Subtitle Sync: 0.0 s (Default)");
+    });
+
     menu->addSeparator();
 
-    // 5. Window Controls
+    // 6. Window Controls
     menu->addAction("Toggle Fullscreen\tEnter", [parentWindow]() {
         if (parentWindow->isFullScreen()) parentWindow->showNormal();
         else parentWindow->showFullScreen();

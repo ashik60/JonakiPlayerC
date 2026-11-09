@@ -1,7 +1,7 @@
 # PotPlayer Feature Parity Matrix
 
 > **Application:** JonakiPlayer vs. Daum PotPlayer 64-bit  
-> **Status:** M4 Playlist & Interaction System Completed & Verified  
+> **Status:** M5 Subtitle Engine & OSD System Completed & Verified  
 > **Legend:**  
 > - 🟢 **Full Parity:** Fully implemented and verified with tests.  
 > - 🟡 **Partial Parity:** Implemented with minor gaps or in progress.  
@@ -31,10 +31,10 @@
 | **PL-02** | Playlist | Daum playlist format (`.dpl`) parser and serializer | Must-have | High | [DIRECTLY-OBSERVED] | M4 🟢 | Round-trip compatible, verified against reference DPLs |
 | **PL-03** | Playlist | Drag-and-drop file, folder, and URL handling | Must-have | High | [DIRECTLY-OBSERVED] | M4 🟢 | Recursive directory scanning & queueing |
 | **PL-04** | Playlist | Queue repeat (One/All/Stop) and shuffle playback | Must-have | High | [DIRECTLY-OBSERVED] | M4 🟢 | Controlled via PlaylistController |
-| **SUB-01** | Subtitles | Embedded subtitle track auto-detection & switching | Must-have | High | [DIRECTLY-OBSERVED] | M2 🟡 | Track enumeration in engine, full UI in M5 |
-| **SUB-02** | Subtitles | External subtitle matching (same-basename auto-load) | Must-have | High | [DIRECTLY-OBSERVED] | M5 | Controlled by `OpenWithSameName=2` |
-| **SUB-03** | Subtitles | Real-time subtitle delay adjustment (`<` and `>`) | Must-have | High | [DIRECTLY-OBSERVED] | M5 | 0.5s offset increment |
-| **SUB-04** | Subtitles | Subtitle style string parsing (`CaptionStyle`) | Should-have | High | [DIRECTLY-OBSERVED] | M5 | Font, outline, shadow, alignment |
+| **SUB-01** | Subtitles | Embedded subtitle track auto-detection & switching | Must-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | Track enumeration in engine, selectTrack("sub", id) |
+| **SUB-02** | Subtitles | External subtitle matching (same-basename auto-load) | Must-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | SubtitleManager findMatchingSubtitles (.srt, .ass, .vtt) |
+| **SUB-03** | Subtitles | Real-time subtitle delay adjustment (`<` and `>`) | Must-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | 0.5s offset increment with instant OSD confirmation |
+| **SUB-04** | Subtitles | Subtitle style string parsing (`CaptionStyle`) | Should-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | Configured in mpv sub-font, sub-color, sub-border |
 | **AUD-01** | Audio | 10-Band graphic equalizer (31Hz to 16kHz) | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=equalizer` |
 | **AUD-02** | Audio | Volume normalization filter | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=dynaudnorm` |
 | **AUD-03** | Audio | Real-time audio delay adjustment (`Shift+<`, `Shift+>`) | Must-have | High | [DIRECTLY-OBSERVED] | M6 | 0.05s offset increment |

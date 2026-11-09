@@ -60,6 +60,11 @@ public:
     void setSubtitleDelay(double seconds) override;
     double getSubtitleDelay() const override;
     void loadExternalSubtitle(const std::string& subPath) override;
+    void setSubtitleVisibility(bool visible) override;
+    bool isSubtitleVisible() const override;
+
+    // --- On-Screen Display (OSD) ---
+    void showOsdMessage(const std::string& text, int durationMs = 1500) override;
     void setAudioDelay(double seconds) override;
     double getAudioDelay() const override;
 
@@ -101,6 +106,7 @@ private:
     int m_volume = 100;
     bool m_mute = false;
     double m_subDelay = 0.0;
+    bool m_subVisibility = true;
     double m_audioDelay = 0.0;
     std::string m_aspectRatio = "default";
     std::string m_hwdecActive = "no";
