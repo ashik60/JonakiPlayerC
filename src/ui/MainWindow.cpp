@@ -23,6 +23,9 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <sstream>
+#include <iomanip>
+#include <vector>
 #include <QKeyEvent>
 #include <QContextMenuEvent>
 #include <QMessageBox>
@@ -264,14 +267,95 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             break;
         case Qt::Key_Less:
         case Qt::Key_Comma:
-            if (m_subtitleManager) m_subtitleManager->adjustDelay(-0.5);
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_engine) {
+                    double d = m_engine->getAudioDelay() - 0.05;
+                    m_engine->setAudioDelay(d);
+                    std::ostringstream ss;
+                    ss << std::fixed << std::setprecision(2);
+                    ss << "Audio Sync: " << (d >= 0 ? "+" : "") << d << " s";
+                    m_engine->showOsdMessage(ss.str());
+                }
+            } else {
+                if (m_subtitleManager) m_subtitleManager->adjustDelay(-0.5);
+            }
             break;
         case Qt::Key_Greater:
         case Qt::Key_Period:
-            if (m_subtitleManager) m_subtitleManager->adjustDelay(0.5);
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_engine) {
+                    double d = m_engine->getAudioDelay() + 0.05;
+                    m_engine->setAudioDelay(d);
+                    std::ostringstream ss;
+                    ss << std::fixed << std::setprecision(2);
+                    ss << "Audio Sync: " << (d >= 0 ? "+" : "") << d << " s";
+                    m_engine->showOsdMessage(ss.str());
+                }
+            } else {
+                if (m_subtitleManager) m_subtitleManager->adjustDelay(0.5);
+            }
             break;
         case Qt::Key_Slash:
-            if (m_subtitleManager) m_subtitleManager->resetDelay();
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_engine) {
+                    m_engine->setAudioDelay(0.0);
+                    m_engine->showOsdMessage("Audio Sync: 0.00 s (Default)");
+                }
+            } else {
+                if (m_subtitleManager) m_subtitleManager->resetDelay();
+            }
+            break;
+        case Qt::Key_E:
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_engine) {
+                    bool eq = !m_engine->isEqualizerEnabled();
+                    m_engine->setEqualizerEnabled(eq);
+                    m_engine->showOsdMessage(eq ? "Equalizer: Enabled" : "Equalizer: Disabled");
+                }
+            }
+            break;
+        case Qt::Key_N:
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_engine) {
+                    bool norm = !m_engine->isAudioNormalizationEnabled();
+                    m_engine->setAudioNormalization(norm);
+                    m_engine->showOsdMessage(norm ? "Normalizer: Enabled" : "Normalizer: Disabled");
+                }
+            }
+            break;
+        case Qt::Key_I:
+            if (event->modifiers() & Qt::ControlModifier) {
+                if (m_engine) {
+                    std::string cur = m_engine->getDeinterlacing();
+                    std::string next = (cur == "off" || cur.empty()) ? "auto" : (cur == "auto" ? "on" : "off");
+                    m_engine->setDeinterlacing(next);
+                    std::string label = (next == "off" ? "Off" : (next == "auto" ? "Auto" : "On"));
+                    m_engine->showOsdMessage("Deinterlacing: " + label);
+                }
+            }
+            break;
+        case Qt::Key_F6:
+            if (event->modifiers() & Qt::ControlModifier) {
+                if (m_engine) {
+                    static const std::vector<std::pair<std::string, std::string>> ratios = {
+                        {"default", "Default (Source)"},
+                        {"16:9", "16:9"},
+                        {"4:3", "4:3"},
+                        {"16:10", "16:10"},
+                        {"1:1", "1:1"}
+                    };
+                    std::string cur = m_engine->getAspectRatio();
+                    int nextIdx = 0;
+                    for (size_t i = 0; i < ratios.size(); ++i) {
+                        if (ratios[i].first == cur) {
+                            nextIdx = (i + 1) % ratios.size();
+                            break;
+                        }
+                    }
+                    m_engine->setAspectRatio(ratios[nextIdx].first);
+                    m_engine->showOsdMessage("Aspect Ratio: " + ratios[nextIdx].second);
+                }
+            }
             break;
         case Qt::Key_H:
             if (event->modifiers() & Qt::AltModifier) {

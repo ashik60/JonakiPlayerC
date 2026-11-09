@@ -4,6 +4,8 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <sstream>
+#include <iomanip>
 
 namespace Jonaki {
 
@@ -71,17 +73,112 @@ std::unique_ptr<QMenu> ContextMenuBuilder::buildMenu(MainWindow* parentWindow) {
     audioMenu->addAction("Mute / Unmute\tM", [parentWindow]() {
         parentWindow->engine()->setMute(!parentWindow->engine()->isMute());
     });
+    audioMenu->addSeparator();
+    audioMenu->addAction("Use Equalizer\tShift+E", [parentWindow]() {
+        bool eq = !parentWindow->engine()->isEqualizerEnabled();
+        parentWindow->engine()->setEqualizerEnabled(eq);
+        parentWindow->engine()->showOsdMessage(eq ? "Equalizer: Enabled" : "Equalizer: Disabled");
+    });
+    audioMenu->addAction("Normalizer (Auto Volume Control)\tShift+N", [parentWindow]() {
+        bool norm = !parentWindow->engine()->isAudioNormalizationEnabled();
+        parentWindow->engine()->setAudioNormalization(norm);
+        parentWindow->engine()->showOsdMessage(norm ? "Normalizer: Enabled" : "Normalizer: Disabled");
+    });
+    audioMenu->addSeparator();
+    auto* audioSyncMenu = audioMenu->addMenu("Audio Sync");
+    audioSyncMenu->addAction("Decrease Audio Sync (-0.05s)\tShift+<", [parentWindow]() {
+        double d = parentWindow->engine()->getAudioDelay() - 0.05;
+        parentWindow->engine()->setAudioDelay(d);
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(2);
+        ss << "Audio Sync: " << (d >= 0 ? "+" : "") << d << " s";
+        parentWindow->engine()->showOsdMessage(ss.str());
+    });
+    audioSyncMenu->addAction("Increase Audio Sync (+0.05s)\tShift+>", [parentWindow]() {
+        double d = parentWindow->engine()->getAudioDelay() + 0.05;
+        parentWindow->engine()->setAudioDelay(d);
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(2);
+        ss << "Audio Sync: " << (d >= 0 ? "+" : "") << d << " s";
+        parentWindow->engine()->showOsdMessage(ss.str());
+    });
+    audioSyncMenu->addAction("Default Audio Sync\tShift+/", [parentWindow]() {
+        parentWindow->engine()->setAudioDelay(0.0);
+        parentWindow->engine()->showOsdMessage("Audio Sync: 0.00 s (Default)");
+    });
 
-    // 4. Video Aspect Ratio Submenu
+    // 4. Video Submenu
     auto* videoMenu = menu->addMenu("Video");
-    videoMenu->addAction("Aspect Ratio: Fit to Window", [parentWindow]() {
+    auto* arMenu = videoMenu->addMenu("Aspect Ratio");
+    arMenu->addAction("Cycle Aspect Ratio\tCtrl+F6", [parentWindow]() {
+        static const std::vector<std::pair<std::string, std::string>> ratios = {
+            {"default", "Default (Source)"},
+            {"16:9", "16:9"},
+            {"4:3", "4:3"},
+            {"16:10", "16:10"},
+            {"1:1", "1:1"}
+        };
+        std::string cur = parentWindow->engine()->getAspectRatio();
+        int nextIdx = 0;
+        for (size_t i = 0; i < ratios.size(); ++i) {
+            if (ratios[i].first == cur) {
+                nextIdx = (i + 1) % ratios.size();
+                break;
+            }
+        }
+        parentWindow->engine()->setAspectRatio(ratios[nextIdx].first);
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: " + ratios[nextIdx].second);
+    });
+    arMenu->addSeparator();
+    arMenu->addAction("Default (Source)", [parentWindow]() {
         parentWindow->engine()->setAspectRatio("default");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: Default (Source)");
     });
-    videoMenu->addAction("Aspect Ratio: 16:9", [parentWindow]() {
+    arMenu->addAction("16:9", [parentWindow]() {
         parentWindow->engine()->setAspectRatio("16:9");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 16:9");
     });
-    videoMenu->addAction("Aspect Ratio: 4:3", [parentWindow]() {
+    arMenu->addAction("4:3", [parentWindow]() {
         parentWindow->engine()->setAspectRatio("4:3");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 4:3");
+    });
+    arMenu->addAction("16:10", [parentWindow]() {
+        parentWindow->engine()->setAspectRatio("16:10");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 16:10");
+    });
+    arMenu->addAction("1:1", [parentWindow]() {
+        parentWindow->engine()->setAspectRatio("1:1");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 1:1");
+    });
+    arMenu->addAction("1.85:1", [parentWindow]() {
+        parentWindow->engine()->setAspectRatio("1.85:1");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 1.85:1");
+    });
+    arMenu->addAction("2.35:1", [parentWindow]() {
+        parentWindow->engine()->setAspectRatio("2.35:1");
+        parentWindow->engine()->showOsdMessage("Aspect Ratio: 2.35:1");
+    });
+
+    auto* deintMenu = videoMenu->addMenu("Deinterlacing");
+    deintMenu->addAction("Cycle Deinterlacing Mode\tCtrl+I", [parentWindow]() {
+        std::string cur = parentWindow->engine()->getDeinterlacing();
+        std::string next = (cur == "off" || cur.empty()) ? "auto" : (cur == "auto" ? "on" : "off");
+        parentWindow->engine()->setDeinterlacing(next);
+        std::string label = (next == "off" ? "Off" : (next == "auto" ? "Auto" : "On"));
+        parentWindow->engine()->showOsdMessage("Deinterlacing: " + label);
+    });
+    deintMenu->addSeparator();
+    deintMenu->addAction("Off", [parentWindow]() {
+        parentWindow->engine()->setDeinterlacing("off");
+        parentWindow->engine()->showOsdMessage("Deinterlacing: Off");
+    });
+    deintMenu->addAction("Auto", [parentWindow]() {
+        parentWindow->engine()->setDeinterlacing("auto");
+        parentWindow->engine()->showOsdMessage("Deinterlacing: Auto");
+    });
+    deintMenu->addAction("On", [parentWindow]() {
+        parentWindow->engine()->setDeinterlacing("on");
+        parentWindow->engine()->showOsdMessage("Deinterlacing: On");
     });
 
     // 5. Subtitles Submenu

@@ -1,7 +1,7 @@
 # PotPlayer Feature Parity Matrix
 
 > **Application:** JonakiPlayer vs. Daum PotPlayer 64-bit  
-> **Status:** M5 Subtitle Engine & OSD System Completed & Verified  
+> **Status:** M6 Audio & Video Processing Systems Completed & Verified  
 > **Legend:**  
 > - 🟢 **Full Parity:** Fully implemented and verified with tests.  
 > - 🟡 **Partial Parity:** Implemented with minor gaps or in progress.  
@@ -35,11 +35,11 @@
 | **SUB-02** | Subtitles | External subtitle matching (same-basename auto-load) | Must-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | SubtitleManager findMatchingSubtitles (.srt, .ass, .vtt) |
 | **SUB-03** | Subtitles | Real-time subtitle delay adjustment (`<` and `>`) | Must-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | 0.5s offset increment with instant OSD confirmation |
 | **SUB-04** | Subtitles | Subtitle style string parsing (`CaptionStyle`) | Should-have | High | [DIRECTLY-OBSERVED] | M5 🟢 | Configured in mpv sub-font, sub-color, sub-border |
-| **AUD-01** | Audio | 10-Band graphic equalizer (31Hz to 16kHz) | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=equalizer` |
-| **AUD-02** | Audio | Volume normalization filter | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `af=dynaudnorm` |
-| **AUD-03** | Audio | Real-time audio delay adjustment (`Shift+<`, `Shift+>`) | Must-have | High | [DIRECTLY-OBSERVED] | M6 | 0.05s offset increment |
-| **VID-01** | Video | Aspect ratio modes (Default, 16:9, 4:3, Fill, Stretch) | Must-have | High | [DIRECTLY-OBSERVED] | M2 🟡 | Engine switching verified, context menu mapped |
-| **VID-02** | Video | Hardware & software deinterlacing | Should-have | High | [DIRECTLY-OBSERVED] | M6 | mpv `deinterlace=yes` |
+| **AUD-01** | Audio | 10-Band graphic equalizer (31Hz to 16kHz) | Should-have | High | [DIRECTLY-OBSERVED] | M6 🟢 | mpv `af=equalizer` with 10 octave bands, -12dB to +12dB clamping |
+| **AUD-02** | Audio | Volume normalization filter | Should-have | High | [DIRECTLY-OBSERVED] | M6 🟢 | mpv `dynaudnorm` (`f=500:g=31:p=0.95:m=10`), coexist with EQ |
+| **AUD-03** | Audio | Real-time audio delay adjustment (`Shift+<`, `Shift+>`) | Must-have | High | [DIRECTLY-OBSERVED] | M6 🟢 | 0.05s offset increment with instant OSD confirmation |
+| **VID-01** | Video | Aspect ratio modes (Default, 16:9, 4:3, 16:10, 1:1, custom) | Must-have | High | [DIRECTLY-OBSERVED] | M6 🟢 | `video-aspect-override`, hotkey `Ctrl+F6`, context submenu |
+| **VID-02** | Video | Hardware & software deinterlacing (Off, Auto, On) | Should-have | High | [DIRECTLY-OBSERVED] | M6 🟢 | mpv `deinterlace`, hotkey `Ctrl+I`, verified with interlaced test asset |
 | **VID-03** | Video | Frame capture to PNG/JPG (`Ctrl+E`) | Should-have | High | [DIRECTLY-OBSERVED] | M7 | mpv `screenshot` command |
 | **ADV-01** | Streaming | HTTP/HTTPS/HLS network stream playback | Should-have | High | [DIRECTLY-OBSERVED] | M7 | Stream loading via URL |
 | **ADV-02** | Streaming | YouTube URL playback via yt-dlp integration | Nice-to-have | Medium | [INFERRED] | M7 | yt-dlp hook in libmpv |

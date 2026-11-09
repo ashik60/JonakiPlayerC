@@ -68,7 +68,20 @@ public:
     void setAudioDelay(double seconds) override;
     double getAudioDelay() const override;
 
+    // --- Equalizer ---
+    void setEqualizerBand(int bandIndex, double gainDb) override;
+    double getEqualizerBand(int bandIndex) const override;
+    void setEqualizerEnabled(bool enabled) override;
+    bool isEqualizerEnabled() const override;
+    void resetEqualizer() override;
+
+    // --- Dynamic Audio Normalization ---
+    void setAudioNormalization(bool enabled) override;
+    bool isAudioNormalizationEnabled() const override;
+
     // --- Video Controls ---
+    void setDeinterlacing(const std::string& mode) override;
+    std::string getDeinterlacing() const override;
     void setAspectRatio(const std::string& ratio) override;
     std::string getAspectRatio() const override;
     std::string getHwdecActive() const override;
@@ -89,6 +102,7 @@ private:
     void eventLoopWorker();
     void handleMpvEvent(void* eventPtr);
     void updateTracks();
+    void applyAudioFilters();
 
 #if defined(HAVE_MPV)
     mpv_handle* m_mpv = nullptr;
@@ -108,6 +122,10 @@ private:
     double m_subDelay = 0.0;
     bool m_subVisibility = true;
     double m_audioDelay = 0.0;
+    bool m_equalizerEnabled = false;
+    std::vector<double> m_equalizerBands = std::vector<double>(10, 0.0);
+    bool m_audioNormalizationEnabled = false;
+    std::string m_deinterlaceMode = "off";
     std::string m_aspectRatio = "default";
     std::string m_hwdecActive = "no";
     std::string m_videoCodec;

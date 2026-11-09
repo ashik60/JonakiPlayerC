@@ -13,22 +13,22 @@ JonakiPlayer is an autonomous, clean-room, cross-platform reimplementation of **
 
 ## 2. Current Development Stage & Milestones
 
-- **Active Milestone:** **M0 — Project Initialization**
-- **Next Milestone:** **M1 — PotPlayer Reconnaissance & Parity Matrix**
-- **Overall Progress:** Environment verified, Node.js LTS installed, REA framework registered with Antigravity MCP, GSD v1.6.0 workflows, skills and subagents validated, initial project repository structure created, reference PotPlayer assets extracted and analyzed.
+- **Active Milestone:** **M7 — Advanced Features & Preferences Dialog Hierarchy**
+- **Last Completed Milestone:** **M6 — Audio & Video Processing Systems**
+- **Overall Progress:** Milestones M0 through M6 completed and verified. 10-band equalizer, dynamic audio normalizer, hardware/software deinterlacing, audio delay adjustment, and video aspect ratio scaling implemented and covered by 7 passing CTest targets.
 
 ### Milestone Schedule Summary
 
 | ID | Milestone Name | Status | Deliverables |
 |---|---|---|---|
-| **M0** | Project Initialization & Environment | **In Progress** | REA & GSD verified, repo initialized, memory docs set |
-| **M1** | PotPlayer Reconnaissance & Evidence | Pending | Complete string, skin, and command catalog |
-| **M2** | Architecture & Playback Foundation | Pending | Qt6 + libmpv core playback window and event loop |
-| **M3** | Main Interface Reconstruction | Pending | PotPlayer skin renderer, frameless frame, timeline, controls |
-| **M4** | Playlist & Interaction System | Pending | Playlist drawer, drag-drop, hotkeys, mouse gestures |
-| **M5** | Subtitle Engine | Pending | SRT, ASS/SSA rendering, styling, delay adjustment |
-| **M6** | Audio & Video Processing | Pending | Equalizer, deinterlacing, color correction, aspect ratio |
-| **M7** | Advanced Features | Pending | Streaming URLs, capture, hardware decoding selection |
+| **M0** | Project Initialization & Environment | **Completed** 🟢 | REA & GSD verified, repo initialized, toolchain ready |
+| **M1** | PotPlayer Reconnaissance & Evidence | **Completed** 🟢 | Complete string, skin, and command catalog |
+| **M2** | Architecture & Playback Foundation | **Completed** 🟢 | Qt6 + libmpv core playback window and event loop |
+| **M3** | Main Interface Reconstruction | **Completed** 🟢 | PotPlayer skin renderer, frameless frame, timeline, controls |
+| **M4** | Playlist & Interaction System | **Completed** 🟢 | Playlist drawer, drag-drop, hotkeys, mouse gestures |
+| **M5** | Subtitle Engine & OSD System | **Completed** 🟢 | SRT, ASS/SSA rendering, styling, delay adjustment, OSD |
+| **M6** | Audio & Video Processing | **Completed** 🟢 | Equalizer, dynaudnorm, deinterlacing, aspect ratio |
+| **M7** | Advanced Features | **In Progress** | Streaming URLs, capture, hardware decoding selection, preferences |
 | **M8** | Visual & Functional Parity Audit | Pending | Screenshot comparison, parity matrix sign-off |
 | **M9** | Stability & Optimization | Pending | Benchmarks, memory leak tests, stress playback |
 | **M10** | Packaging & Release Engineering | Pending | Windows installer / portable zip, Linux AppImage/packages |

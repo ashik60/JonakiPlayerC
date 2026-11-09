@@ -97,6 +97,21 @@ public:
     virtual void setAudioDelay(double seconds) = 0;
     virtual double getAudioDelay() const = 0;
 
+    // --- Equalizer ---
+    virtual void setEqualizerBand(int bandIndex, double gainDb) = 0; // bandIndex 0-9, gain -12dB to +12dB
+    virtual double getEqualizerBand(int bandIndex) const = 0;
+    virtual void setEqualizerEnabled(bool enabled) = 0;
+    virtual bool isEqualizerEnabled() const = 0;
+    virtual void resetEqualizer() = 0;
+
+    // --- Dynamic Audio Normalization ---
+    virtual void setAudioNormalization(bool enabled) = 0;
+    virtual bool isAudioNormalizationEnabled() const = 0;
+
+    // --- Video Deinterlacing ---
+    virtual void setDeinterlacing(const std::string& mode) = 0; // "off", "on", "auto"
+    virtual std::string getDeinterlacing() const = 0;
+
     // --- Video Aspect Ratio & Zoom ---
     virtual void setAspectRatio(const std::string& ratio) = 0; // e.g., "default", "16:9", "4:3"
     virtual std::string getAspectRatio() const = 0;

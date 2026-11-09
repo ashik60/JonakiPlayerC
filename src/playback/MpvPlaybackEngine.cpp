@@ -2,6 +2,7 @@
 #include "../core/Logger.h"
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 namespace Jonaki {
 
@@ -560,18 +561,129 @@ void MpvPlaybackEngine::showOsdMessage(const std::string& text, int durationMs) 
 }
 
 void MpvPlaybackEngine::setAudioDelay(double seconds) {
+    double clamped = std::clamp(seconds, -10.0, 10.0);
 #if defined(HAVE_MPV)
     if (m_mpv) {
-        mpv_set_property_async(m_mpv, 0, "audio-delay", MPV_FORMAT_DOUBLE, &seconds);
+        mpv_set_property_async(m_mpv, 0, "audio-delay", MPV_FORMAT_DOUBLE, &clamped);
     }
 #endif
     std::lock_guard<std::mutex> lock(m_stateMutex);
-    m_audioDelay = seconds;
+    m_audioDelay = clamped;
 }
 
 double MpvPlaybackEngine::getAudioDelay() const {
     std::lock_guard<std::mutex> lock(m_stateMutex);
     return m_audioDelay;
+}
+
+void MpvPlaybackEngine::applyAudioFilters() {
+    std::string eqStr;
+    if (m_equalizerEnabled) {
+        static const int centerFreqs[10] = {31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000};
+        std::ostringstream ss;
+        ss << "lavfi=[";
+        for (int i = 0; i < 10; ++i) {
+            if (i > 0) ss << ",";
+            ss << "equalizer=f=" << centerFreqs[i] << ":width_type=o:w=1:g=" << m_equalizerBands[i];
+        }
+        ss << "]";
+        eqStr = ss.str();
+    }
+
+    std::string normStr;
+    if (m_audioNormalizationEnabled) {
+        normStr = "lavfi=[dynaudnorm=f=500:g=31:p=0.95:m=10]";
+    }
+
+    std::string combinedFilter;
+    if (!eqStr.empty() && !normStr.empty()) {
+        combinedFilter = eqStr + "," + normStr;
+    } else if (!eqStr.empty()) {
+        combinedFilter = eqStr;
+    } else if (!normStr.empty()) {
+        combinedFilter = normStr;
+    }
+
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "af", combinedFilter.c_str());
+        Logger::info("Applied audio filter graph: " + (combinedFilter.empty() ? "(cleared)" : combinedFilter));
+    }
+#endif
+}
+
+void MpvPlaybackEngine::setEqualizerBand(int bandIndex, double gainDb) {
+    if (bandIndex < 0 || bandIndex >= 10) return;
+    double clamped = std::clamp(gainDb, -12.0, 12.0);
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_equalizerBands[bandIndex] = clamped;
+    }
+    applyAudioFilters();
+}
+
+double MpvPlaybackEngine::getEqualizerBand(int bandIndex) const {
+    if (bandIndex < 0 || bandIndex >= 10) return 0.0;
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_equalizerBands[bandIndex];
+}
+
+void MpvPlaybackEngine::setEqualizerEnabled(bool enabled) {
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_equalizerEnabled = enabled;
+    }
+    applyAudioFilters();
+}
+
+bool MpvPlaybackEngine::isEqualizerEnabled() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_equalizerEnabled;
+}
+
+void MpvPlaybackEngine::resetEqualizer() {
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_equalizerBands = std::vector<double>(10, 0.0);
+    }
+    applyAudioFilters();
+}
+
+void MpvPlaybackEngine::setAudioNormalization(bool enabled) {
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_audioNormalizationEnabled = enabled;
+    }
+    applyAudioFilters();
+}
+
+bool MpvPlaybackEngine::isAudioNormalizationEnabled() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_audioNormalizationEnabled;
+}
+
+void MpvPlaybackEngine::setDeinterlacing(const std::string& mode) {
+    std::string mpvMode = "no";
+    if (mode == "on" || mode == "yes") {
+        mpvMode = "yes";
+    } else if (mode == "auto") {
+        mpvMode = "auto";
+    } else {
+        mpvMode = "no";
+    }
+
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "deinterlace", mpvMode.c_str());
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_deinterlaceMode = mode;
+}
+
+std::string MpvPlaybackEngine::getDeinterlacing() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_deinterlaceMode;
 }
 
 void MpvPlaybackEngine::setAspectRatio(const std::string& ratio) {

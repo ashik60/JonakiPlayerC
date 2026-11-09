@@ -116,6 +116,29 @@ public:
     void setAudioDelay(double seconds) override { m_audioDelay = seconds; }
     double getAudioDelay() const override { return m_audioDelay; }
 
+    void setEqualizerBand(int bandIndex, double gainDb) override {
+        if (bandIndex >= 0 && bandIndex < 10) {
+            m_equalizerBands[bandIndex] = std::clamp(gainDb, -12.0, 12.0);
+        }
+    }
+    double getEqualizerBand(int bandIndex) const override {
+        if (bandIndex >= 0 && bandIndex < 10) {
+            return m_equalizerBands[bandIndex];
+        }
+        return 0.0;
+    }
+    void setEqualizerEnabled(bool enabled) override { m_equalizerEnabled = enabled; }
+    bool isEqualizerEnabled() const override { return m_equalizerEnabled; }
+    void resetEqualizer() override {
+        m_equalizerBands = std::vector<double>(10, 0.0);
+    }
+
+    void setAudioNormalization(bool enabled) override { m_audioNormalizationEnabled = enabled; }
+    bool isAudioNormalizationEnabled() const override { return m_audioNormalizationEnabled; }
+
+    void setDeinterlacing(const std::string& mode) override { m_deinterlaceMode = mode; }
+    std::string getDeinterlacing() const override { return m_deinterlaceMode; }
+
     void setAspectRatio(const std::string& ratio) override { m_aspectRatio = ratio; }
     std::string getAspectRatio() const override { return m_aspectRatio; }
 
@@ -141,6 +164,10 @@ private:
     double m_subDelay = 0.0;
     bool m_subVisibility = true;
     double m_audioDelay = 0.0;
+    bool m_equalizerEnabled = false;
+    std::vector<double> m_equalizerBands = std::vector<double>(10, 0.0);
+    bool m_audioNormalizationEnabled = false;
+    std::string m_deinterlaceMode = "off";
     std::string m_aspectRatio = "default";
     std::vector<TrackInfo> m_tracks;
 

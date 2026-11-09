@@ -38,10 +38,13 @@ void SettingsManager::resetToDefaults() {
 
     m_settings[makeKey("Video", "AspectRatio")] = std::string("Default");
     m_settings[makeKey("Video", "Deinterlace")] = false;
+    m_settings[makeKey("Video", "DeinterlaceMode")] = std::string("off");
     m_settings[makeKey("Video", "HwDec")] = std::string("auto-safe");
 
     m_settings[makeKey("Audio", "Normalization")] = false;
     m_settings[makeKey("Audio", "EqualizerEnabled")] = false;
+    m_settings[makeKey("Audio", "EqualizerBands")] = std::string("0;0;0;0;0;0;0;0;0;0");
+    m_settings[makeKey("Audio", "AudioDelay")] = 0.0;
 
     m_settings[makeKey("Subtitles", "ShowSubtitles")] = true;
     m_settings[makeKey("Subtitles", "FontSize")] = 24;

@@ -104,3 +104,26 @@ if(WIN32)
 endif()
 
 add_test(NAME SubtitleTest COMMAND SubtitleTest)
+
+# 7. Audio & Video Filters Unit/Integration Tests
+add_executable(AudioVideoFilterTest
+    unit/test_audio_video_filters.cpp
+    ../src/playback/MpvPlaybackEngine.cpp
+    ../src/settings/SettingsManager.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(AudioVideoFilterTest PRIVATE
+    Qt6::Core
+    Qt6::Test
+    ${MPV_LIBRARIES}
+)
+
+target_compile_definitions(AudioVideoFilterTest PRIVATE HAVE_MPV=1)
+
+if(WIN32)
+    target_compile_definitions(AudioVideoFilterTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(AudioVideoFilterTest PRIVATE dwmapi shell32 user32)
+endif()
+
+add_test(NAME AudioVideoFilterTest COMMAND AudioVideoFilterTest)
