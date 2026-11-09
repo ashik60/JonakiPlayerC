@@ -23,10 +23,7 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
     Gui
     Widgets
     Network
-)
-
-find_package(Qt6 OPTIONAL_COMPONENTS
-    Svg
+    OpenGL
     OpenGLWidgets
 )
 
@@ -47,7 +44,7 @@ endif()
 if(MPV_FOUND)
     message(STATUS "Found libmpv: ${MPV_LIBRARIES}")
 else()
-    message(WARNING "libmpv not found! Playback engine will compile in mock mode until installed.")
+    message(FATAL_ERROR "libmpv required for Milestone M2 playback engine!")
 endif()
 
 # Compiler warnings and optimization flags
@@ -60,11 +57,8 @@ endif()
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${MPV_INCLUDE_DIRS}
 )
-
-if(MPV_FOUND)
-    include_directories(${MPV_INCLUDE_DIRS})
-endif()
 
 # Source file definitions
 set(CORE_SOURCES
@@ -79,10 +73,20 @@ set(SETTINGS_SOURCES
     src/settings/SettingsManager.h
 )
 
+set(INPUT_SOURCES
+    src/input/ActionManager.cpp
+    src/input/ActionManager.h
+)
+
 set(PLAYBACK_SOURCES
     src/playback/IPlaybackEngine.h
     src/playback/MpvPlaybackEngine.cpp
     src/playback/MpvPlaybackEngine.h
+)
+
+set(VIDEO_SOURCES
+    src/video/VideoOpenGLWidget.cpp
+    src/video/VideoOpenGLWidget.h
 )
 
 set(UI_SOURCES
@@ -103,7 +107,9 @@ add_executable(JonakiPlayer
     ${APP_SOURCES}
     ${CORE_SOURCES}
     ${SETTINGS_SOURCES}
+    ${INPUT_SOURCES}
     ${PLAYBACK_SOURCES}
+    ${VIDEO_SOURCES}
     ${UI_SOURCES}
 )
 
@@ -112,27 +118,19 @@ target_link_libraries(JonakiPlayer PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Network
+    Qt6::OpenGL
+    Qt6::OpenGLWidgets
+    ${MPV_LIBRARIES}
 )
 
-if(TARGET Qt6::Svg)
-    target_link_libraries(JonakiPlayer PRIVATE Qt6::Svg)
-endif()
-
-if(TARGET Qt6::OpenGLWidgets)
-    target_link_libraries(JonakiPlayer PRIVATE Qt6::OpenGLWidgets)
-endif()
-
-if(MPV_FOUND)
-    target_link_libraries(JonakiPlayer PRIVATE ${MPV_LIBRARIES})
-    target_compile_definitions(JonakiPlayer PRIVATE HAVE_MPV=1)
-endif()
+target_compile_definitions(JonakiPlayer PRIVATE HAVE_MPV=1)
 
 # Platform specific configurations
 if(WIN32)
     target_compile_definitions(JonakiPlayer PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
-    target_link_libraries(JonakiPlayer PRIVATE dwmapi shell32 user32)
+    target_link_libraries(JonakiPlayer PRIVATE dwmapi shell32 user32 opengl32)
 elseif(UNIX AND NOT APPLE)
-    target_link_libraries(JonakiPlayer PRIVATE pthread)
+    target_link_libraries(JonakiPlayer PRIVATE pthread GL)
 endif()
 
 # Enable Testing

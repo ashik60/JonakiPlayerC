@@ -44,3 +44,16 @@ This document tracks architectural and technical decisions made during the devel
 - **Date:** 2026-11-09
 - **Context:** Need a unified, reproducible C++20 and Qt6/libmpv toolchain on Windows that matches Linux packaging paradigms.
 - **Decision:** Standardize on MSYS2 UCRT64 (`mingw-w64-ucrt-x86_64`) for local builds and CI, providing precompiled GCC 14, Qt 6.x, CMake, Ninja, libmpv, and FFmpeg, while maintaining standard MSVC CMake build compatibility.
+
+---
+
+## TDR-005: Video Surface Architecture via Qt OpenGL Framebuffer (`mpv_render_context`)
+
+- **Status:** Accepted
+- **Date:** 2026-11-09
+- **Context:** Modern multimedia players require zero-copy or direct hardware-accelerated video rendering integrated with Qt's widget composition tree.
+- **Alternatives Considered:**
+  1. *Direct HWND window embedding (`wid` property)*: Causes flickering during resize, breaks cross-platform Wayland composition, and prevents overlaying semi-transparent Qt HUD/controls directly over the video surface without complex airspace workarounds.
+  2. *Software rendering to QImage / QPixmap*: Excessive CPU overhead for high-bitrate 4K/60fps video.
+  3. *OpenGL FBO rendering via `mpv_render_context`*: **Selected**. `VideoOpenGLWidget` subclasses `QOpenGLWidget`. During `paintGL()`, `mpv_render_context_render()` renders directly to the widget's default OpenGL framebuffer (`defaultFramebufferObject()`), with an update callback invoking `QMetaObject::invokeMethod` to trigger repaints on the main Qt GUI thread.
+- **Decision:** Standardize on `QOpenGLWidget` + `mpv_render_context` with OpenGL API parameters (`MPV_RENDER_PARAM_OPENGL_FBO`) for cross-platform zero-airspace video presentation.

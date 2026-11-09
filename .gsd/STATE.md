@@ -1,29 +1,34 @@
 ---
-updated: 2026-11-09T08:35:00+06:00
+updated: 2026-11-09T09:20:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M1 - PotPlayer Reconnaissance & Evidence Mapping
-**Phase:** Phase 1 - PotPlayer Reconnaissance
+**Milestone:** M2 - Architecture & Playback Foundation
+**Phase:** Phase 2 - Core Engine & Pipeline
 **Status:** completed
-**Plan:** M1 Evidence Gathering & Reverse Engineering (Completed)
+**Plan:** M2 Architecture & Playback Foundation (Completed & Verified)
 
 ## Last Action
 
-- Executed Milestone M1 systematic reverse engineering of installed PotPlayer.
-- Measured runtime window geometry: 723x399 px main window, 751x564 px preferences dialog.
-- Captured empirical screenshot evidence via Win32 PrintWindow.
-- Extracted 184 RT_DIALOG resource IDs, 886 menu nodes, and XML layout directives.
-- Published application-analysis.md, ui-analysis.md, configuration-analysis.md, playback-analysis.md.
-- Published milestone_M1_research_report.md and milestone_M2_implementation_plan.md.
+- Implemented pure C++ `IPlaybackEngine` decoupled interface with complete state transitions, error callbacks, and track lists.
+- Implemented `MpvPlaybackEngine` backed by `libmpv` asynchronous event worker thread (`mpv_wait_event`), handling property observation (`time-pos`, `duration`, `pause`, `volume`, `speed`, `mute`, `track-list`) and hardware acceleration defaults (`hwdec=auto-safe`).
+- Integrated `VideoOpenGLWidget` subclassing `QOpenGLWidget` + `mpv_render_context` with OpenGL FBO rendering and GUI thread updates.
+- Decoupled command management via `ActionManager` and integrated responsive UI in `MainWindow` (seekbar, volume slider, time labels, keyboard shortcuts).
+- Implemented automated tests:
+  - `SettingsTest`: Configuration loading/saving/defaults.
+  - `PlaybackEngineMockTest`: Deterministic state transitions, error handling, seek bounds.
+  - `MpvPlaybackIntegrationTest`: Real media playback verification with `test_video_aac.mp4` and `test_audio.mp3`.
+- Verified 100% CTest pass rate (3/3 tests passed).
+- Verified runtime execution and clean termination, capturing `docs/milestones/evidence/m2_playback_runtime.png`.
+- Documented TDR-005 (Video Surface Architecture via `mpv_render_context`) and updated Feature Parity Matrix.
 
 ## Next Steps
 
-1. Review M1 research deliverables and M2 implementation plan with Product Owner.
-2. Begin Milestone M2 (Architecture & Playback Foundation) upon approval.
+1. Review M2 completion report and prepare for Milestone M3 (Skin Engine & UI Reproduction).
+2. Begin M3: Custom frameless window (723x399 default geometry), aero-snap Win32 integration, independent XML skin parsing, and context menu hierarchy mapping.
 
 ## Active Decisions
 
@@ -33,11 +38,12 @@ updated: 2026-11-09T08:35:00+06:00
 | TDR-002 Skin Engine | Clean-room Qt XML skin parser & spritesheet renderer | 2026-11-09 | M3, M4, M8 |
 | TDR-003 Playback Decoupling | Abstract `IPlaybackEngine` interface | 2026-11-09 | M2, M5, M6 |
 | TDR-004 Windows Toolchain | MSYS2 UCRT64 toolchain | 2026-11-09 | Build & test workflows |
+| TDR-005 Video Surface Architecture | `QOpenGLWidget` + `mpv_render_context` (OpenGL FBO) | 2026-11-09 | M2, M3, M6 |
 
 ## Blockers
 
-*None. All tools and prerequisites installed or installing normally.*
+*None. Playback foundation is fully operational and verified.*
 
 ## Concerns
 
-- Large size of Qt 6 and libmpv packages (~2.3 GB unpacked) on MSYS2; monitor disk space and installation progress.
+*None.*
