@@ -96,6 +96,14 @@ set(UI_SOURCES
     src/ui/SkinRenderer.h
     src/ui/SkinParser.cpp
     src/ui/SkinParser.h
+    src/ui/FramelessWindowHelper.cpp
+    src/ui/FramelessWindowHelper.h
+    src/ui/TitleBarWidget.cpp
+    src/ui/TitleBarWidget.h
+    src/ui/BottomControlBar.cpp
+    src/ui/BottomControlBar.h
+    src/ui/ContextMenuBuilder.cpp
+    src/ui/ContextMenuBuilder.h
 )
 
 set(APP_SOURCES

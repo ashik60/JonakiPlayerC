@@ -3,23 +3,23 @@
 #include <QMainWindow>
 #include <memory>
 
-class QSlider;
-class QLabel;
-class QPushButton;
-class QTimer;
-
 namespace Jonaki {
 
 class IPlaybackEngine;
 class MpvPlaybackEngine;
 class VideoOpenGLWidget;
+class TitleBarWidget;
+class BottomControlBar;
+class FramelessWindowHelper;
 
 /**
  * @brief Main window for JonakiPlayer.
  *
- * Implements the core video rendering layout, control bar with seekbar,
- * volume slider, time labels, play/pause controls, keyboard shortcuts,
- * and drag-and-drop media loading.
+ * Implements the measured 723x399 PotPlayer default layout:
+ * - 31px custom frameless title bar
+ * - OpenGL video surface with mpv rendering
+ * - 62px bottom control bar (22px seekbar + 40px buttons)
+ * - Complete context menu hierarchy & keyboard shortcuts
  */
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -33,17 +33,10 @@ public:
 protected:
     void closeEvent(QCloseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
-
-private slots:
-    void onPlayPauseClicked();
-    void onStopClicked();
-    void onOpenFileClicked();
-    void onOpenUrlClicked();
-    void onSeekSliderMoved(int position);
-    void onVolumeSliderMoved(int position);
-    void onMuteClicked();
+    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
 
 private:
     void setupUi();
@@ -52,18 +45,11 @@ private:
     void connectSignals();
 
     std::unique_ptr<MpvPlaybackEngine> m_engine;
+    std::unique_ptr<FramelessWindowHelper> m_framelessHelper;
+
+    TitleBarWidget* m_titleBar = nullptr;
     VideoOpenGLWidget* m_videoWidget = nullptr;
-
-    // Controls
-    QPushButton* m_btnPlayPause = nullptr;
-    QPushButton* m_btnStop = nullptr;
-    QPushButton* m_btnOpenFile = nullptr;
-    QPushButton* m_btnMute = nullptr;
-    QSlider* m_seekSlider = nullptr;
-    QSlider* m_volumeSlider = nullptr;
-    QLabel* m_lblTime = nullptr;
-
-    bool m_userSeeking = false;
+    BottomControlBar* m_controlBar = nullptr;
 };
 
 } // namespace Jonaki

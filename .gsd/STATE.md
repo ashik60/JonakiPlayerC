@@ -1,34 +1,33 @@
 ---
-updated: 2026-11-09T09:20:00+06:00
+updated: 2026-11-09T09:41:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M2 - Architecture & Playback Foundation
-**Phase:** Phase 2 - Core Engine & Pipeline
+**Milestone:** M3 - Main Interface Reconstruction & Skin Engine
+**Phase:** Phase 3 - Skin Engine & UI Reproduction
 **Status:** completed
-**Plan:** M2 Architecture & Playback Foundation (Completed & Verified)
+**Plan:** M3 Skin Engine & UI Reproduction (Completed & Verified)
 
 ## Last Action
 
-- Implemented pure C++ `IPlaybackEngine` decoupled interface with complete state transitions, error callbacks, and track lists.
-- Implemented `MpvPlaybackEngine` backed by `libmpv` asynchronous event worker thread (`mpv_wait_event`), handling property observation (`time-pos`, `duration`, `pause`, `volume`, `speed`, `mute`, `track-list`) and hardware acceleration defaults (`hwdec=auto-safe`).
-- Integrated `VideoOpenGLWidget` subclassing `QOpenGLWidget` + `mpv_render_context` with OpenGL FBO rendering and GUI thread updates.
-- Decoupled command management via `ActionManager` and integrated responsive UI in `MainWindow` (seekbar, volume slider, time labels, keyboard shortcuts).
-- Implemented automated tests:
-  - `SettingsTest`: Configuration loading/saving/defaults.
-  - `PlaybackEngineMockTest`: Deterministic state transitions, error handling, seek bounds.
-  - `MpvPlaybackIntegrationTest`: Real media playback verification with `test_video_aac.mp4` and `test_audio.mp3`.
-- Verified 100% CTest pass rate (3/3 tests passed).
-- Verified runtime execution and clean termination, capturing `docs/milestones/evidence/m2_playback_runtime.png`.
-- Documented TDR-005 (Video Surface Architecture via `mpv_render_context`) and updated Feature Parity Matrix.
+- Performed focused technical audit of M2 playback foundation: unhooked mpv render callbacks, enforced strict shutdown ordering, added hardware decoding introspection (`getHwdecActive()`), and expanded integration regression suite with 3 tests (`testRepeatedLifecycle`, `testRapidStateChanges`, `testHardwareDecodingDetection`).
+- Generated clean-room texture atlas (`resources/skins/default/Main.png`) via procedural generator (`scripts/generate_clean_atlas.py`), avoiding bundling proprietary Daum/Kakao assets.
+- Implemented `SkinParser` supporting XML directives and conditional macros (`#if`, `#else`, `#endif`), verified with `SkinParserTest`.
+- Implemented `FramelessWindowHelper` supporting native Win32 `WM_NCHITTEST` resize handles and aero snap.
+- Reconstructed `TitleBarWidget` (31px custom title bar with "Jonaki ▼" menu, title, pin, min, max, close).
+- Reconstructed `BottomControlBar` (62px total: 22px seekbar row with volume/mute + 40px buttons row with time indicators).
+- Implemented `ContextMenuBuilder` faithfully mirroring PotPlayer context menu hierarchy.
+- Reconstructed `MainWindow` at exact 723x399 px geometry, integrating video surface and controls.
+- Verified 100% CTest pass rate across all 4 test suites (Settings, Mock, Integration, SkinParser).
+- Verified runtime execution at 723x399 px and captured verification screenshot: `docs/milestones/evidence/m3_jonaki_main_window.png`.
 
 ## Next Steps
 
-1. Review M2 completion report and prepare for Milestone M3 (Skin Engine & UI Reproduction).
-2. Begin M3: Custom frameless window (723x399 default geometry), aero-snap Win32 integration, independent XML skin parsing, and context menu hierarchy mapping.
+1. Review M3 completion report and prepare for Milestone M4 (Playlist & Interaction System).
+2. Begin M4: Dockable playlist drawer (`F8`), Daum playlist format (`.dpl`) parser/serializer, drag-and-drop recursive queueing, repeat/shuffle modes, and resume position history (`MediaInfo.sdb`).
 
 ## Active Decisions
 
@@ -39,10 +38,11 @@ updated: 2026-11-09T09:20:00+06:00
 | TDR-003 Playback Decoupling | Abstract `IPlaybackEngine` interface | 2026-11-09 | M2, M5, M6 |
 | TDR-004 Windows Toolchain | MSYS2 UCRT64 toolchain | 2026-11-09 | Build & test workflows |
 | TDR-005 Video Surface Architecture | `QOpenGLWidget` + `mpv_render_context` (OpenGL FBO) | 2026-11-09 | M2, M3, M6 |
+| TDR-006 Frameless Window Integration | Win32 `WM_NCHITTEST` + Qt frameless widget hierarchy | 2026-11-09 | M3, M4 |
 
 ## Blockers
 
-*None. Playback foundation is fully operational and verified.*
+*None. M3 UI reconstruction is fully operational and verified.*
 
 ## Concerns
 
