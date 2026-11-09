@@ -11,6 +11,8 @@ class VideoOpenGLWidget;
 class TitleBarWidget;
 class BottomControlBar;
 class FramelessWindowHelper;
+class PlaylistController;
+class PlaylistDrawer;
 
 /**
  * @brief Main window for JonakiPlayer.
@@ -50,6 +52,9 @@ private:
     TitleBarWidget* m_titleBar = nullptr;
     VideoOpenGLWidget* m_videoWidget = nullptr;
     BottomControlBar* m_controlBar = nullptr;
+
+    std::unique_ptr<PlaylistController> m_playlistController;
+    PlaylistDrawer* m_playlistDrawer = nullptr;
 };
 
 } // namespace Jonaki

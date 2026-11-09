@@ -3,6 +3,9 @@
 #include "BottomControlBar.h"
 #include "FramelessWindowHelper.h"
 #include "ContextMenuBuilder.h"
+#include "PlaylistDrawer.h"
+#include "../playlist/PlaylistController.h"
+#include "../playlist/ResumeStore.h"
 #include "../core/Constants.h"
 #include "../core/Logger.h"
 #include "../settings/SettingsManager.h"
@@ -11,6 +14,9 @@
 #include "../input/ActionManager.h"
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QStandardPaths>
+#include <QDir>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QDragEnterEvent>
@@ -48,6 +54,14 @@ void MainWindow::setupEngine() {
     if (!m_engine->initialize()) {
         Logger::error("Failed to initialize MpvPlaybackEngine in MainWindow.");
     }
+
+    // Initialize Resume Store SQLite database in AppData
+    QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataDir);
+    QString sdbPath = appDataDir + "/MediaInfo.sdb";
+    ResumeStore::instance().initialize(sdbPath.toStdString());
+
+    m_playlistController = std::make_unique<PlaylistController>(m_engine.get(), this);
 }
 
 void MainWindow::setupUi() {
@@ -71,10 +85,21 @@ void MainWindow::setupUi() {
     m_titleBar->setTitleText(windowTitle());
     rootLayout->addWidget(m_titleBar);
 
-    // 2. Video Viewport
-    m_videoWidget = new VideoOpenGLWidget(this);
+    // 2. Middle area: Video Viewport + Dockable Playlist Drawer
+    auto* middleContainer = new QWidget(central);
+    auto* middleLayout = new QHBoxLayout(middleContainer);
+    middleLayout->setContentsMargins(0, 0, 0, 0);
+    middleLayout->setSpacing(0);
+
+    m_videoWidget = new VideoOpenGLWidget(middleContainer);
     m_videoWidget->setEngine(m_engine.get());
-    rootLayout->addWidget(m_videoWidget, 1);
+    middleLayout->addWidget(m_videoWidget, 1);
+
+    m_playlistDrawer = new PlaylistDrawer(m_playlistController.get(), middleContainer);
+    m_playlistDrawer->setVisible(false); // Collapsed by default, toggled via F8 or bottom button
+    middleLayout->addWidget(m_playlistDrawer);
+
+    rootLayout->addWidget(middleContainer, 1);
 
     // 3. Bottom Skinned Controls (62px)
     m_controlBar = new BottomControlBar(this);
@@ -136,6 +161,31 @@ void MainWindow::connectSignals() {
         m_controlBar->setMuted(m_engine->isMute());
     });
 
+    connect(m_controlBar, &BottomControlBar::prevClicked, this, [this]() {
+        if (m_playlistController) m_playlistController->playPrevious();
+    });
+    connect(m_controlBar, &BottomControlBar::nextClicked, this, [this]() {
+        if (m_playlistController) m_playlistController->playNext();
+    });
+    connect(m_controlBar, &BottomControlBar::playlistClicked, this, [this]() {
+        if (m_playlistDrawer) {
+            bool visible = !m_playlistDrawer->isVisible();
+            m_playlistDrawer->setVisible(visible);
+            if (visible) {
+                resize(width() + m_playlistDrawer->width(), height());
+            } else {
+                resize(std::max(723, width() - m_playlistDrawer->width()), height());
+            }
+        }
+    });
+
+    connect(m_playlistDrawer, &PlaylistDrawer::closeRequested, this, [this]() {
+        if (m_playlistDrawer && m_playlistDrawer->isVisible()) {
+            m_playlistDrawer->setVisible(false);
+            resize(std::max(723, width() - m_playlistDrawer->width()), height());
+        }
+    });
+
     // Engine callbacks
     m_engine->setOnStateChanged([this](PlaybackState state) {
         QMetaObject::invokeMethod(this, [this, state]() {
@@ -190,6 +240,23 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             m_engine->setMute(!m_engine->isMute());
             m_controlBar->setMuted(m_engine->isMute());
             break;
+        case Qt::Key_F8:
+            if (m_playlistDrawer) {
+                bool vis = !m_playlistDrawer->isVisible();
+                m_playlistDrawer->setVisible(vis);
+                if (vis) {
+                    resize(width() + m_playlistDrawer->width(), height());
+                } else {
+                    resize(std::max(723, width() - m_playlistDrawer->width()), height());
+                }
+            }
+            break;
+        case Qt::Key_PageDown:
+            if (m_playlistController) m_playlistController->playNext();
+            break;
+        case Qt::Key_PageUp:
+            if (m_playlistController) m_playlistController->playPrevious();
+            break;
         case Qt::Key_Return:
         case Qt::Key_Enter:
             if (isFullScreen()) showNormal();
@@ -214,10 +281,15 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
 
 void MainWindow::dropEvent(QDropEvent* event) {
     const auto urls = event->mimeData()->urls();
-    if (!urls.isEmpty()) {
-        QString localPath = urls.first().toLocalFile();
-        if (!localPath.isEmpty()) {
-            m_engine->loadMedia(localPath.toStdString());
+    if (!urls.isEmpty() && m_playlistController) {
+        QStringList paths;
+        for (const auto& u : urls) {
+            QString lp = u.toLocalFile();
+            if (!lp.isEmpty()) paths.append(lp);
+        }
+        m_playlistController->addPaths(paths);
+        if (m_playlistController->currentIndex() == -1 && m_playlistController->model()->rowCount() > 0) {
+            m_playlistController->playIndex(0);
         }
     }
 }

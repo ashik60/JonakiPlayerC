@@ -31,6 +31,12 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
     pkg_check_modules(MPV QUIET mpv)
+    pkg_check_modules(SQLITE3 QUIET sqlite3)
+endif()
+
+if(NOT SQLITE3_FOUND)
+    find_path(SQLITE3_INCLUDE_DIRS NAMES sqlite3.h)
+    find_library(SQLITE3_LIBRARIES NAMES sqlite3)
 endif()
 
 if(NOT MPV_FOUND)
@@ -89,6 +95,17 @@ set(VIDEO_SOURCES
     src/video/VideoOpenGLWidget.h
 )
 
+set(PLAYLIST_SOURCES
+    src/playlist/DplPlaylistParser.cpp
+    src/playlist/DplPlaylistParser.h
+    src/playlist/ResumeStore.cpp
+    src/playlist/ResumeStore.h
+    src/playlist/PlaylistModel.cpp
+    src/playlist/PlaylistModel.h
+    src/playlist/PlaylistController.cpp
+    src/playlist/PlaylistController.h
+)
+
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -102,6 +119,8 @@ set(UI_SOURCES
     src/ui/TitleBarWidget.h
     src/ui/BottomControlBar.cpp
     src/ui/BottomControlBar.h
+    src/ui/PlaylistDrawer.cpp
+    src/ui/PlaylistDrawer.h
     src/ui/ContextMenuBuilder.cpp
     src/ui/ContextMenuBuilder.h
 )
@@ -119,6 +138,7 @@ add_executable(JonakiPlayer
     ${SETTINGS_SOURCES}
     ${INPUT_SOURCES}
     ${PLAYBACK_SOURCES}
+    ${PLAYLIST_SOURCES}
     ${VIDEO_SOURCES}
     ${UI_SOURCES}
 )
@@ -131,6 +151,7 @@ target_link_libraries(JonakiPlayer PRIVATE
     Qt6::OpenGL
     Qt6::OpenGLWidgets
     ${MPV_LIBRARIES}
+    sqlite3
 )
 
 target_compile_definitions(JonakiPlayer PRIVATE HAVE_MPV=1)

@@ -1,33 +1,31 @@
 ---
-updated: 2026-11-09T09:41:00+06:00
+updated: 2026-11-09T09:55:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M3 - Main Interface Reconstruction & Skin Engine
-**Phase:** Phase 3 - Skin Engine & UI Reproduction
+**Milestone:** M4 - Playlist & Interaction System
+**Phase:** Phase 4 - Playlist & Persistence
 **Status:** completed
-**Plan:** M3 Skin Engine & UI Reproduction (Completed & Verified)
+**Plan:** M4 Playlist & Interaction System (Completed & Verified)
 
 ## Last Action
 
-- Performed focused technical audit of M2 playback foundation: unhooked mpv render callbacks, enforced strict shutdown ordering, added hardware decoding introspection (`getHwdecActive()`), and expanded integration regression suite with 3 tests (`testRepeatedLifecycle`, `testRapidStateChanges`, `testHardwareDecodingDetection`).
-- Generated clean-room texture atlas (`resources/skins/default/Main.png`) via procedural generator (`scripts/generate_clean_atlas.py`), avoiding bundling proprietary Daum/Kakao assets.
-- Implemented `SkinParser` supporting XML directives and conditional macros (`#if`, `#else`, `#endif`), verified with `SkinParserTest`.
-- Implemented `FramelessWindowHelper` supporting native Win32 `WM_NCHITTEST` resize handles and aero snap.
-- Reconstructed `TitleBarWidget` (31px custom title bar with "Jonaki ▼" menu, title, pin, min, max, close).
-- Reconstructed `BottomControlBar` (62px total: 22px seekbar row with volume/mute + 40px buttons row with time indicators).
-- Implemented `ContextMenuBuilder` faithfully mirroring PotPlayer context menu hierarchy.
-- Reconstructed `MainWindow` at exact 723x399 px geometry, integrating video surface and controls.
-- Verified 100% CTest pass rate across all 4 test suites (Settings, Mock, Integration, SkinParser).
-- Verified runtime execution at 723x399 px and captured verification screenshot: `docs/milestones/evidence/m3_jonaki_main_window.png`.
+- Audited M3 skin engine directives, recording unsupported PotPlayer directives as unresolved in `docs/reverse-engineering/skin-compatibility-audit.md`.
+- Decoupled parity classification into Geometric, Visual, and Behavioral tiers in Feature Parity Matrix.
+- Implemented `DplPlaylistParser`: Round-trip compatible Daum PotPlayer `.dpl` parser and serializer preserving unknown/future metadata fields.
+- Implemented `ResumeStore`: Clean-room SQLite persistence engine matching PotPlayer's `MediaInfo.sdb` schema and percent-encoded keys.
+- Implemented `PlaylistModel` and `PlaylistController`: Queue management, sequential / repeat / shuffle orders, folder recursive scanning, auto-resume position restoration upon playback start.
+- Implemented `PlaylistDrawer`: 280px dockable / collapsible sliding drawer, expanding window from 723px to 1003px while preserving video viewport, toggled via `F8`.
+- Added unit and round-trip tests (`PlaylistTest`) and maintained 100% CTest pass rate across 5 suites.
+- Verified runtime execution with playlist open, capturing `docs/milestones/evidence/m4_jonaki_with_playlist.png`.
 
 ## Next Steps
 
-1. Review M3 completion report and prepare for Milestone M4 (Playlist & Interaction System).
-2. Begin M4: Dockable playlist drawer (`F8`), Daum playlist format (`.dpl`) parser/serializer, drag-and-drop recursive queueing, repeat/shuffle modes, and resume position history (`MediaInfo.sdb`).
+1. Review M4 completion report and prepare for Milestone M5 (Subtitle Engine & OSD System).
+2. Begin M5: Embedded subtitle track selection, external subtitle matching (`.srt`, `.ass`, `.vtt` with same basename), real-time subtitle delay adjustment (`<` and `>`), and custom OSD styling.
 
 ## Active Decisions
 
@@ -39,10 +37,11 @@ updated: 2026-11-09T09:41:00+06:00
 | TDR-004 Windows Toolchain | MSYS2 UCRT64 toolchain | 2026-11-09 | Build & test workflows |
 | TDR-005 Video Surface Architecture | `QOpenGLWidget` + `mpv_render_context` (OpenGL FBO) | 2026-11-09 | M2, M3, M6 |
 | TDR-006 Frameless Window Integration | Win32 `WM_NCHITTEST` + Qt frameless widget hierarchy | 2026-11-09 | M3, M4 |
+| TDR-007 Playlist & Resume Schema | Daum `.dpl` parser + SQLite `MediaInfo.sdb` | 2026-11-09 | M4, M7 |
 
 ## Blockers
 
-*None. M3 UI reconstruction is fully operational and verified.*
+*None. M4 playlist and interaction system is fully operational and verified.*
 
 ## Concerns
 

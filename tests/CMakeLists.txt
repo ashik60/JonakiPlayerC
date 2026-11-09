@@ -64,3 +64,20 @@ target_link_libraries(SkinParserTest PRIVATE
 )
 
 add_test(NAME SkinParserTest COMMAND SkinParserTest)
+
+# 5. Playlist & Resume Store Unit Tests
+add_executable(PlaylistTest
+    unit/test_playlist.cpp
+    ../src/playlist/DplPlaylistParser.cpp
+    ../src/playlist/ResumeStore.cpp
+    ../src/playlist/PlaylistModel.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(PlaylistTest PRIVATE
+    Qt6::Core
+    Qt6::Test
+    sqlite3
+)
+
+add_test(NAME PlaylistTest COMMAND PlaylistTest)

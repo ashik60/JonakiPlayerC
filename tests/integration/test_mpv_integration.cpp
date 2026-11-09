@@ -75,7 +75,11 @@ private slots:
 
         // Seek
         engine.seek(2.0, true);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        attempts = 0;
+        while (engine.getCurrentTime() < 1.0 && attempts < 40) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            attempts++;
+        }
         QCOMPARE(engine.getCurrentTime() >= 1.0, true);
 
         // Volume
@@ -84,7 +88,11 @@ private slots:
 
         // Stop
         engine.stop();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        attempts = 0;
+        while (engine.getState() != PlaybackState::Stopped && attempts < 40) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            attempts++;
+        }
         QCOMPARE(engine.getState(), PlaybackState::Stopped);
 
         engine.shutdown();
