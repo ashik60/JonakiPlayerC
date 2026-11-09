@@ -143,6 +143,11 @@ void MpvPlaybackEngine::handleMpvEvent(void* eventPtr) {
             if (m_onStateChanged) m_onStateChanged(m_state);
             break;
         }
+        case MPV_EVENT_FILE_LOADED: {
+            Logger::info("Media file loaded and demuxed successfully.");
+            updateTracks();
+            break;
+        }
         case MPV_EVENT_END_FILE: {
             mpv_event_end_file* endEvent = static_cast<mpv_event_end_file*>(event->data);
             std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -268,6 +273,7 @@ void MpvPlaybackEngine::updateTracks() {
                 std::lock_guard<std::mutex> lock(m_stateMutex);
                 m_tracks = newTracks;
             }
+            Logger::info("Tracks updated, total: " + std::to_string(newTracks.size()));
             if (m_onTrackListChanged) m_onTrackListChanged(newTracks);
         }
         mpv_free_node_contents(&node);
@@ -470,6 +476,11 @@ bool MpvPlaybackEngine::isMute() const {
 }
 
 std::vector<TrackInfo> MpvPlaybackEngine::getTracks() const {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        const_cast<MpvPlaybackEngine*>(this)->updateTracks();
+    }
+#endif
     std::lock_guard<std::mutex> lock(m_stateMutex);
     return m_tracks;
 }
@@ -509,7 +520,12 @@ void MpvPlaybackEngine::loadExternalSubtitle(const std::string& subPath) {
 #if defined(HAVE_MPV)
     if (m_mpv) {
         const char* cmd[] = {"sub-add", subPath.c_str(), "select", nullptr};
-        mpv_command_async(m_mpv, 0, cmd);
+        int err = mpv_command(m_mpv, cmd);
+        if (err < 0) {
+            Logger::error("Failed to load subtitle: " + std::string(mpv_error_string(err)));
+        } else {
+            updateTracks();
+        }
     }
 #endif
 }

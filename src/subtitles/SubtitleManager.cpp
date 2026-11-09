@@ -4,6 +4,8 @@
 
 #include <QFileInfo>
 #include <QDir>
+#include <algorithm>
+#include <vector>
 #include <sstream>
 #include <iomanip>
 
@@ -14,9 +16,8 @@ SubtitleManager::SubtitleManager(IPlaybackEngine* engine)
 }
 
 QStringList SubtitleManager::findMatchingSubtitles(const std::string& mediaPath) const {
-    QStringList matches;
     QFileInfo mediaInfo(QString::fromStdString(mediaPath));
-    if (!mediaInfo.exists()) return matches;
+    if (!mediaInfo.exists()) return {};
 
     QDir parentDir = mediaInfo.dir();
     QString baseName = mediaInfo.completeBaseName();
@@ -25,19 +26,45 @@ QStringList SubtitleManager::findMatchingSubtitles(const std::string& mediaPath)
         "srt", "ass", "ssa", "vtt", "sub", "smi", "idx", "txt"
     };
 
+    struct Candidate {
+        QString path;
+        int tier;          // 0 = exact base, 1 = language tag (base.lang), 2 = other suffix (base.*)
+        int formatRank;    // 0 = ass/ssa, 1 = srt, 2 = vtt, 3 = other
+        QString tag;       // language or extra tag
+    };
+
+    std::vector<Candidate> candidates;
+
     const auto entries = parentDir.entryInfoList(QDir::Files | QDir::NoSymLinks);
     for (const auto& entry : entries) {
         QString ext = entry.suffix().toLower();
         if (subExts.contains(ext)) {
             QString name = entry.completeBaseName();
-            // Direct basename match: e.g. "movie.srt" or "movie.en.srt"
-            if (name == baseName || name.startsWith(baseName + ".")) {
-                matches.append(entry.absoluteFilePath());
+            if (name == baseName) {
+                int formatRank = (ext == "ass" || ext == "ssa") ? 0 : (ext == "srt" ? 1 : (ext == "vtt" ? 2 : 3));
+                candidates.push_back({entry.absoluteFilePath(), 0, formatRank, ""});
+            } else if (name.startsWith(baseName + ".")) {
+                QString suffix = name.mid(baseName.length() + 1);
+                int formatRank = (ext == "ass" || ext == "ssa") ? 0 : (ext == "srt" ? 1 : (ext == "vtt" ? 2 : 3));
+                // If suffix is 2-3 characters (e.g. "en", "bn", "eng"), treat as tier 1 language tag
+                int tier = (suffix.length() <= 3 && !suffix.contains('.')) ? 1 : 2;
+                candidates.push_back({entry.absoluteFilePath(), tier, formatRank, suffix});
             }
         }
     }
 
-    return matches;
+    std::sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
+        if (a.tier != b.tier) return a.tier < b.tier;
+        if (a.formatRank != b.formatRank) return a.formatRank < b.formatRank;
+        if (a.tag != b.tag) return a.tag < b.tag;
+        return a.path < b.path;
+    });
+
+    QStringList result;
+    for (const auto& c : candidates) {
+        result.append(c.path);
+    }
+    return result;
 }
 
 void SubtitleManager::autoLoadMatchingSubtitles(const std::string& mediaPath) {

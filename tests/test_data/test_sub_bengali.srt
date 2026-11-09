@@ -1,0 +1,6 @@
+1
+00:00:00,500 --> 00:00:04,500
+জোনাকি প্লেয়ার (JonakiPlayer) - পরীক্ষা
+যুক্তাক্ষর: কৃষ্ণ, বিজ্ঞান, আশ্চর্য, উজ্জ্বল, বন্দ্যোপাধ্যায়
+কারচিহ্ন: কি, কী, কু, কূ, কৃ, কে, কৈ, কো, কৌ
+English mixed: JonakiPlayer is a faithful PotPlayer reimplementation.
