@@ -17,6 +17,7 @@ public:
     void setPosition(double currentSec, double totalSec);
     void setVolume(int vol);
     void setMuted(bool muted);
+    void setLoopPoints(double aSec, double bSec, double totalSec);
 
 signals:
     void playClicked();
@@ -59,6 +60,9 @@ private:
     QPushButton* m_btnControlBox = nullptr;
 
     bool m_userSeeking = false;
+    double m_loopASec = -1.0;
+    double m_loopBSec = -1.0;
+    double m_totalDurationSec = 0.0;
 };
 
 } // namespace Jonaki

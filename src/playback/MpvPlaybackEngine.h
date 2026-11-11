@@ -84,8 +84,23 @@ public:
     std::string getDeinterlacing() const override;
     void setAspectRatio(const std::string& ratio) override;
     std::string getAspectRatio() const override;
+    // --- Hardware Decoding Introspection & Configuration ---
+    void setHwdecProfile(const std::string& profile) override;
+    std::string getRequestedHwdecProfile() const override;
+    std::string getActiveHwdecDecoder() const override;
     std::string getHwdecActive() const override;
     std::string getVideoCodec() const override;
+
+    // --- A-B Repeat Loop ---
+    void setLoopPointA(double seconds) override;
+    void setLoopPointB(double seconds) override;
+    void clearLoopPointA() override;
+    void clearLoopPointB() override;
+    void clearLoop() override;
+    double getLoopPointA() const override;
+    double getLoopPointB() const override;
+    bool isLoopActive() const override;
+    void toggleLoop() override;
 
     // --- Frame Capture ---
     bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) override;
@@ -130,8 +145,13 @@ private:
     bool m_audioNormalizationEnabled = false;
     std::string m_deinterlaceMode = "off";
     std::string m_aspectRatio = "default";
-    std::string m_hwdecActive = "no";
-    std::string m_videoCodec;
+    std::string m_requestedHwdec = "auto-safe";
+    mutable std::string m_hwdecActive = "no";
+    mutable std::string m_videoCodec;
+    std::string m_currentMediaUri;
+    double m_loopA = -1.0;
+    double m_loopB = -1.0;
+    bool m_loopActive = false;
     std::vector<TrackInfo> m_tracks;
 
     StateChangedCallback m_onStateChanged;

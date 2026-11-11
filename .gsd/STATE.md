@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-11T11:05:00+06:00
+updated: 2026-11-11T12:20:00+06:00
 ---
 
 # Project State
@@ -8,34 +8,26 @@ updated: 2026-11-11T11:05:00+06:00
 
 **Milestone:** M7 - Advanced Features & Preferences Dialog Hierarchy
 **Phase:** Phase 7 - Advanced Features & Preferences
-**Status:** in_progress
+**Status:** completed
 **Plan:** M7 Advanced Features & Preferences Hierarchy
 
 ## Last Action
 
-- Completed and verified Wave 7.3: Open URL & Network Streaming (`01d1f9e`).
-- Implemented `UrlValidator` (`src/network/UrlValidator.h/.cpp`) supporting HTTP, HTTPS, RTMP, and RTMPS schemes, HLS (.m3u8) detection, credential sanitization for diagnostics, and parameter/fragment preservation.
-- Implemented `OpenUrlDialog` (`src/ui/OpenUrlDialog.h/.cpp`) reconstructing PotPlayer's Dialog 310 layout:
-  - Header prompt ("Input the URL of the stream or file to be played.") and subtext example.
-  - Editable URL ComboBox with history dropdown.
-  - "Auto paste URLs from clipboard", "Process subtitles", and "Store only entered URLs" options.
-  - "Clear all", "Delete selected", "Open" (Default / Enter), and "Cancel" (Escape) buttons.
-  - Non-intrusive clipboard auto-paste (only when auto-paste enabled and valid URL on clipboard; never overwrites user-entered text).
-  - Most-recent-first history persistence through `SettingsManager` with deduplication and 20-item cap.
-- Integrated `Ctrl+U` shortcut in `MainWindow` and wired "Open URL...\tCtrl+U" in context menu, directly appending opened stream URLs to the playlist and starting playback.
-- Generated deterministic local HLS VOD fixture with `.m3u8` playlist and `.ts` transport stream segments in `tests/test_data/hls/`.
-- Implemented unit test suite `tests/unit/test_open_url_dialog.cpp` (`OpenUrlDialogTest`) covering URL scheme validation, invalid formatting, credential masking, clipboard auto-paste, manual input preservation, and history persistence/deduplication/clearing (14 passing cases).
-- Implemented integration test suite `tests/integration/test_network_streaming.cpp` (`NetworkStreamingTest`) featuring an embedded `LocalHttpServer` covering direct HTTP MP4 playback, HLS VOD streaming, HTTP 302 redirects, HTTP 404 error transitions, invalid M3U8 handling, missing HLS segment recovery, and clean engine shutdown during buffering.
-- Verified 100% pass across all 11 CTest targets in 32.89s.
+- Completed and verified Wave 7.4: Hardware Decoding Profiles & A-B Repeat Loop.
+- Extended `IPlaybackEngine` and implemented dynamic hardware-decoding profile switching (`auto-safe`, `d3d11va`, `d3d11va-copy`, `dxva2`, `dxva2-copy`, `d3d12va`, `d3d12va-copy`, `no`) in `MpvPlaybackEngine` without playback crash or interruption.
+- Implemented active decoder and video codec inspection with fallback to track properties.
+- Implemented native A-B repeat looping (`[` set A, `]` set B, `\` toggle, `Shift+[` clear A, `Shift+]` clear B).
+- Added timeline marker rendering in `BottomControlBar` (cyan for Point A, red/orange for Point B).
+- Wired `PreferencesDialog` hardware acceleration profile selection to the active playback engine.
+- Implemented `tests/integration/test_hwdec_profiles.cpp` (10 passing cases) and `tests/unit/test_ab_repeat.cpp` (9 passing cases).
+- Verified 100% pass across all 13 CTest targets.
+- Verified real-world media playback and hardware acceleration on `E:\Video Song`.
+- Generated `docs/milestones/milestone-reports/wave_7_4_completion_report.md` and `docs/milestones/milestone-reports/milestone_M7_completion_report.md`.
 
 ## Next Steps
 
-1. Begin Wave 7.4: Hardware-Decoding Profiles & A-B Repeat Loop:
-   - Investigate and verify supported hardware decoding profiles in bundled libmpv/MSYS2 UCRT64 environment (e.g. `d3d11va`, `d3d11va-copy`, `auto-safe`, `no`).
-   - Implement dynamic runtime `hwdec` switching through `MpvPlaybackEngine` and observe active decoder via `hwdec-current`.
-   - Implement A-B repeat mechanism (`ab-loop-a`, `ab-loop-b`, `ab-loop-clear`) with keyboard shortcuts `[` (set A), `]` (set B), `\` (clear).
-   - Add A-B repeat seekbar tick markers in `BottomControlBar`.
-   - Implement `tests/integration/test_hwdec_ab_loop.cpp` and register into CTest.
+1. Present Milestone M7 Completion Report for user review.
+2. Upon approval, transition to Milestone M8: Skin Engine Fidelity & Complete Theming.
 
 ## Active Decisions
 

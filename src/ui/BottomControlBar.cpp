@@ -186,6 +186,13 @@ void BottomControlBar::setMuted(bool muted) {
     }
 }
 
+void BottomControlBar::setLoopPoints(double aSec, double bSec, double totalSec) {
+    m_loopASec = aSec;
+    m_loopBSec = bSec;
+    m_totalDurationSec = totalSec;
+    update();
+}
+
 void BottomControlBar::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter p(this);
@@ -193,6 +200,28 @@ void BottomControlBar::paintEvent(QPaintEvent* event) {
     p.fillRect(0, 0, width(), 22, QColor(32, 32, 34));
     p.setPen(QColor(45, 45, 48));
     p.drawLine(0, 0, width(), 0);
+
+    // Draw A-B loop timeline markers on the seek rail if active
+    if (m_seekSlider && m_totalDurationSec > 0.0) {
+        QRect sliderGeo = m_seekSlider->geometry();
+        int railLeft = m_seekRow->x() + sliderGeo.x() + 5;
+        int railWidth = sliderGeo.width() - 10;
+        int railY = m_seekRow->y() + sliderGeo.y();
+
+        if (m_loopASec >= 0.0 && m_loopASec <= m_totalDurationSec) {
+            int markerAX = railLeft + static_cast<int>((m_loopASec / m_totalDurationSec) * railWidth);
+            p.setPen(QPen(QColor(0, 200, 255), 2)); // Cyan for Point A
+            p.drawLine(markerAX, railY + 2, markerAX, railY + 18);
+            p.fillRect(markerAX - 2, railY + 1, 5, 4, QColor(0, 200, 255));
+        }
+
+        if (m_loopBSec >= 0.0 && m_loopBSec <= m_totalDurationSec) {
+            int markerBX = railLeft + static_cast<int>((m_loopBSec / m_totalDurationSec) * railWidth);
+            p.setPen(QPen(QColor(255, 80, 80), 2)); // Red/Orange for Point B
+            p.drawLine(markerBX, railY + 2, markerBX, railY + 18);
+            p.fillRect(markerBX - 2, railY + 15, 5, 4, QColor(255, 80, 80));
+        }
+    }
 
     // Draw 40px buttons row background
     p.fillRect(0, 22, width(), 40, QColor(24, 24, 26));

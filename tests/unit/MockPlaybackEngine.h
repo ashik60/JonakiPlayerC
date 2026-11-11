@@ -142,8 +142,35 @@ public:
     void setAspectRatio(const std::string& ratio) override { m_aspectRatio = ratio; }
     std::string getAspectRatio() const override { return m_aspectRatio; }
 
-    std::string getHwdecActive() const override { return "no"; }
+    void setHwdecProfile(const std::string& profile) override { m_requestedHwdec = profile; }
+    std::string getRequestedHwdecProfile() const override { return m_requestedHwdec; }
+    std::string getActiveHwdecDecoder() const override { return m_activeHwdec; }
+    std::string getHwdecActive() const override { return m_activeHwdec; }
+    void setActiveHwdecDecoder(const std::string& act) { m_activeHwdec = act; }
     std::string getVideoCodec() const override { return "h264"; }
+
+    // --- A-B Repeat Loop ---
+    void setLoopPointA(double seconds) override {
+        m_loopA = seconds;
+        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) m_loopActive = true;
+    }
+    void setLoopPointB(double seconds) override {
+        m_loopB = seconds;
+        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) m_loopActive = true;
+    }
+    void clearLoopPointA() override { m_loopA = -1.0; m_loopActive = false; }
+    void clearLoopPointB() override { m_loopB = -1.0; m_loopActive = false; }
+    void clearLoop() override { m_loopA = -1.0; m_loopB = -1.0; m_loopActive = false; }
+    double getLoopPointA() const override { return m_loopA; }
+    double getLoopPointB() const override { return m_loopB; }
+    bool isLoopActive() const override { return m_loopActive; }
+    void toggleLoop() override {
+        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) {
+            m_loopActive = !m_loopActive;
+        } else {
+            clearLoop();
+        }
+    }
 
     bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) override {
         if (!m_initialized || m_loadedPath.empty() || m_state == PlaybackState::Stopped) {
@@ -184,6 +211,11 @@ private:
     std::vector<TrackInfo> m_tracks;
     std::string m_lastCapturedPath;
     CaptureMode m_lastCaptureMode = CaptureMode::Subtitles;
+    std::string m_requestedHwdec = "auto-safe";
+    std::string m_activeHwdec = "no";
+    double m_loopA = -1.0;
+    double m_loopB = -1.0;
+    bool m_loopActive = false;
 
     StateChangedCallback m_onStateChanged;
     TimeChangedCallback m_onTimeChanged;

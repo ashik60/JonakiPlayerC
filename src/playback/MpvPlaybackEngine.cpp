@@ -56,6 +56,8 @@ bool MpvPlaybackEngine::initialize() {
     mpv_observe_property(m_mpv, 7, "speed", MPV_FORMAT_DOUBLE);
     mpv_observe_property(m_mpv, 8, "hwdec-current", MPV_FORMAT_STRING);
     mpv_observe_property(m_mpv, 9, "video-codec", MPV_FORMAT_STRING);
+    mpv_observe_property(m_mpv, 10, "ab-loop-a", MPV_FORMAT_STRING);
+    mpv_observe_property(m_mpv, 11, "ab-loop-b", MPV_FORMAT_STRING);
 
     int status = mpv_initialize(m_mpv);
     if (status < 0) {
@@ -227,6 +229,36 @@ void MpvPlaybackEngine::handleMpvEvent(void* eventPtr) {
                     std::lock_guard<std::mutex> lock(m_stateMutex);
                     m_videoCodec = vc ? vc : "";
                 }
+            } else if (std::strcmp(prop->name, "ab-loop-a") == 0) {
+                if (prop->format == MPV_FORMAT_STRING) {
+                    const char* aVal = *static_cast<char**>(prop->data);
+                    std::lock_guard<std::mutex> lock(m_stateMutex);
+                    if (aVal && std::strcmp(aVal, "no") != 0 && std::strlen(aVal) > 0) {
+                        try {
+                            m_loopA = std::stod(aVal);
+                        } catch (...) {
+                            m_loopA = -1.0;
+                        }
+                    } else {
+                        m_loopA = -1.0;
+                    }
+                    m_loopActive = (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA);
+                }
+            } else if (std::strcmp(prop->name, "ab-loop-b") == 0) {
+                if (prop->format == MPV_FORMAT_STRING) {
+                    const char* bVal = *static_cast<char**>(prop->data);
+                    std::lock_guard<std::mutex> lock(m_stateMutex);
+                    if (bVal && std::strcmp(bVal, "no") != 0 && std::strlen(bVal) > 0) {
+                        try {
+                            m_loopB = std::stod(bVal);
+                        } catch (...) {
+                            m_loopB = -1.0;
+                        }
+                    } else {
+                        m_loopB = -1.0;
+                    }
+                    m_loopActive = (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA);
+                }
             }
             break;
         }
@@ -290,6 +322,14 @@ bool MpvPlaybackEngine::loadMedia(const std::string& pathOrUrl) {
     }
 
     Logger::info("MpvPlaybackEngine loading media: " + pathOrUrl);
+
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_currentMediaUri = pathOrUrl;
+        m_loopA = -1.0;
+        m_loopB = -1.0;
+        m_loopActive = false;
+    }
 
 #if defined(HAVE_MPV)
     if (!m_mpv) return false;
@@ -708,8 +748,181 @@ std::string MpvPlaybackEngine::getHwdecActive() const {
 }
 
 std::string MpvPlaybackEngine::getVideoCodec() const {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        char* vc = mpv_get_property_string(m_mpv, "video-codec");
+        if (vc) {
+            std::string res(vc);
+            mpv_free(vc);
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_videoCodec = res;
+            return res;
+        }
+        char* vf = mpv_get_property_string(m_mpv, "video-format");
+        if (vf) {
+            std::string res(vf);
+            mpv_free(vf);
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_videoCodec = res;
+            return res;
+        }
+    }
+#endif
     std::lock_guard<std::mutex> lock(m_stateMutex);
+    if (!m_videoCodec.empty()) {
+        return m_videoCodec;
+    }
+    for (const auto& track : m_tracks) {
+        if (track.type == "video" && !track.codec.empty()) {
+            m_videoCodec = track.codec;
+            return m_videoCodec;
+        }
+    }
     return m_videoCodec;
+}
+
+void MpvPlaybackEngine::setHwdecProfile(const std::string& profile) {
+    Logger::info("Requesting hwdec profile change: " + profile);
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        int err = mpv_set_property_string(m_mpv, "hwdec", profile.c_str());
+        if (err < 0) {
+            Logger::warning("Failed to set hwdec property: " + std::string(mpv_error_string(err)));
+        }
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_requestedHwdec = profile;
+}
+
+std::string MpvPlaybackEngine::getRequestedHwdecProfile() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_requestedHwdec;
+}
+
+std::string MpvPlaybackEngine::getActiveHwdecDecoder() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_hwdecActive;
+}
+
+void MpvPlaybackEngine::setLoopPointA(double seconds) {
+    double clamped = std::max(0.0, seconds);
+    std::string secStr = std::to_string(clamped);
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", secStr.c_str());
+    }
+#endif
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_loopA = clamped;
+        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) {
+            m_loopActive = true;
+        }
+    }
+    showOsdMessage("Point A: " + secStr.substr(0, secStr.find('.') + 3) + "s", 1500);
+}
+
+void MpvPlaybackEngine::setLoopPointB(double seconds) {
+    double clamped = std::max(0.0, seconds);
+    std::string secStr = std::to_string(clamped);
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-b", secStr.c_str());
+    }
+#endif
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_loopB = clamped;
+        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) {
+            m_loopActive = true;
+        }
+    }
+    showOsdMessage("Point B: " + secStr.substr(0, secStr.find('.') + 3) + "s", 1500);
+}
+
+void MpvPlaybackEngine::clearLoopPointA() {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_loopA = -1.0;
+    m_loopActive = false;
+    showOsdMessage("Point A cleared", 1500);
+}
+
+void MpvPlaybackEngine::clearLoopPointB() {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-b", "no");
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_loopB = -1.0;
+    m_loopActive = false;
+    showOsdMessage("Point B cleared", 1500);
+}
+
+void MpvPlaybackEngine::clearLoop() {
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+        mpv_set_property_string(m_mpv, "ab-loop-b", "no");
+    }
+#endif
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_loopA = -1.0;
+    m_loopB = -1.0;
+    m_loopActive = false;
+    showOsdMessage("A-B repeat cleared", 1500);
+}
+
+double MpvPlaybackEngine::getLoopPointA() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_loopA;
+}
+
+double MpvPlaybackEngine::getLoopPointB() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_loopB;
+}
+
+bool MpvPlaybackEngine::isLoopActive() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_loopActive;
+}
+
+void MpvPlaybackEngine::toggleLoop() {
+    bool hasBoth = false;
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        hasBoth = (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA);
+    }
+
+    if (hasBoth) {
+        bool nowActive = false;
+        {
+            std::lock_guard<std::mutex> lock(m_stateMutex);
+            m_loopActive = !m_loopActive;
+            nowActive = m_loopActive;
+        }
+#if defined(HAVE_MPV)
+        if (m_mpv) {
+            if (nowActive) {
+                mpv_set_property_string(m_mpv, "ab-loop-a", std::to_string(m_loopA).c_str());
+                mpv_set_property_string(m_mpv, "ab-loop-b", std::to_string(m_loopB).c_str());
+            } else {
+                mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+                mpv_set_property_string(m_mpv, "ab-loop-b", "no");
+            }
+        }
+#endif
+        showOsdMessage(nowActive ? "A-B repeat: Started" : "A-B repeat: Stopped", 1500);
+    } else {
+        clearLoop();
+    }
 }
 
 bool MpvPlaybackEngine::captureFrame(const std::string& outputPath, CaptureMode mode) {

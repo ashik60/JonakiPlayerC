@@ -125,9 +125,23 @@ public:
     virtual void setAspectRatio(const std::string& ratio) = 0; // e.g., "default", "16:9", "4:3"
     virtual std::string getAspectRatio() const = 0;
 
-    // --- Hardware Decoding Introspection ---
+    // --- Hardware Decoding Introspection & Configuration ---
+    virtual void setHwdecProfile(const std::string& profile) = 0; // "auto-safe", "d3d11va", "d3d11va-copy", "dxva2", "dxva2-copy", "no"
+    virtual std::string getRequestedHwdecProfile() const = 0;
+    virtual std::string getActiveHwdecDecoder() const = 0;
     virtual std::string getHwdecActive() const = 0;
     virtual std::string getVideoCodec() const = 0;
+
+    // --- A-B Repeat Loop ---
+    virtual void setLoopPointA(double seconds) = 0;
+    virtual void setLoopPointB(double seconds) = 0;
+    virtual void clearLoopPointA() = 0;
+    virtual void clearLoopPointB() = 0;
+    virtual void clearLoop() = 0;
+    virtual double getLoopPointA() const = 0; // -1.0 if unset
+    virtual double getLoopPointB() const = 0; // -1.0 if unset
+    virtual bool isLoopActive() const = 0;
+    virtual void toggleLoop() = 0;
 
     // --- Frame Capture ---
     virtual bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) = 0;

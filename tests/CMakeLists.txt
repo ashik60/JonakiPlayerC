@@ -221,4 +221,53 @@ endif()
 
 add_test(NAME NetworkStreamingTest COMMAND NetworkStreamingTest)
 
+# 13. Hardware-Decoding Profiles Integration Tests
+add_executable(HwdecProfileTest
+    integration/test_hwdec_profiles.cpp
+    ../src/playback/MpvPlaybackEngine.cpp
+    ../src/settings/SettingsManager.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(HwdecProfileTest PRIVATE
+    Qt6::Core
+    Qt6::Test
+    ${MPV_LIBRARIES}
+)
+
+target_compile_definitions(HwdecProfileTest PRIVATE HAVE_MPV=1)
+
+if(WIN32)
+    target_compile_definitions(HwdecProfileTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(HwdecProfileTest PRIVATE dwmapi shell32 user32)
+endif()
+
+add_test(NAME HwdecProfileTest COMMAND HwdecProfileTest)
+
+# 14. A-B Repeat Unit Tests
+add_executable(ABRepeatTest
+    unit/test_ab_repeat.cpp
+    ../src/playback/MpvPlaybackEngine.cpp
+    ../src/ui/BottomControlBar.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(ABRepeatTest PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+    ${MPV_LIBRARIES}
+)
+
+target_compile_definitions(ABRepeatTest PRIVATE HAVE_MPV=1)
+
+if(WIN32)
+    target_compile_definitions(ABRepeatTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(ABRepeatTest PRIVATE dwmapi shell32 user32)
+endif()
+
+add_test(NAME ABRepeatTest COMMAND ABRepeatTest)
+
+
 

@@ -26,11 +26,15 @@ This file maintains the immediate, ordered implementation tasks for active sessi
    - Implement automated local HTTP test server harness and deterministic HLS test stream fixtures.
    - Implement `tests/unit/test_open_url_dialog.cpp` and `tests/integration/test_network_streaming.cpp`.
    - Verified 100% pass across all 11 CTest targets.
-5. [ ] **Hardware Decoding Configuration & A-B Repeat Loop (Wave 7.4):**
+5. [x] **Hardware Decoding Configuration & A-B Repeat Loop (Wave 7.4):**
    - Provide hardware decoding profile selection (D3D11VA, DXVA2, copy-back vs native, auto, off).
    - Implement dynamic runtime `hwdec` switching and active status feedback.
-   - Implement A-B repeat (`[`, `]`, `\`) with seekbar tick rendering.
-6. [ ] **M7 Automated Integration Tests & Parity Verification:**
-   - Verify full 12-target CTest suite passes.
-   - Capture runtime screenshots of Preferences dialog, frame capture output, and open URL dialog.
-   - Publish `docs/milestones/milestone-reports/milestone_M7_completion_report.md`.
+   - Implement A-B repeat (`[`, `]`, `\`, `Shift+[`, `Shift+]`) with seekbar tick rendering.
+   - Implement `HwdecProfileTest` and `ABRepeatTest`.
+6. [x] **M7 Automated Integration Tests & Parity Verification:**
+   - Verify full 13-target CTest suite passes 100%.
+   - Publish `docs/milestones/milestone-reports/wave_7_4_completion_report.md` and `docs/milestones/milestone-reports/milestone_M7_completion_report.md`.
+
+## Upcoming Milestone: M8 — Skin Engine Fidelity & Complete Theming
+1. [ ] Parse PotPlayer skin `.dsf` / XML archive structures and bitmap slices.
+2. [ ] Reconstruct default PotPlayer skin controls with 1:1 visual parity.

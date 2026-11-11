@@ -405,6 +405,32 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
                 }
             }
             break;
+        case Qt::Key_BracketLeft: // '['
+            if (m_engine) {
+                if (event->modifiers() & Qt::ShiftModifier) {
+                    m_engine->clearLoopPointA();
+                } else {
+                    m_engine->setLoopPointA(m_engine->getCurrentTime());
+                }
+                m_controlBar->setLoopPoints(m_engine->getLoopPointA(), m_engine->getLoopPointB(), m_engine->getDuration());
+            }
+            break;
+        case Qt::Key_BracketRight: // ']'
+            if (m_engine) {
+                if (event->modifiers() & Qt::ShiftModifier) {
+                    m_engine->clearLoopPointB();
+                } else {
+                    m_engine->setLoopPointB(m_engine->getCurrentTime());
+                }
+                m_controlBar->setLoopPoints(m_engine->getLoopPointA(), m_engine->getLoopPointB(), m_engine->getDuration());
+            }
+            break;
+        case Qt::Key_Backslash: // '\'
+            if (m_engine) {
+                m_engine->toggleLoop();
+                m_controlBar->setLoopPoints(m_engine->getLoopPointA(), m_engine->getLoopPointB(), m_engine->getDuration());
+            }
+            break;
         case Qt::Key_F5:
             openPreferencesDialog();
             break;
@@ -476,6 +502,7 @@ void MainWindow::openPreferencesDialog(int categoryIndex, int subPageIndex) {
         if (m_engine) {
             m_engine->setAspectRatio(sm.getString("Video", "AspectRatio", "Default"));
             m_engine->setDeinterlacing(sm.getString("Video", "DeinterlaceMode", "off"));
+            m_engine->setHwdecProfile(sm.getString("Video", "HwDec", "auto-safe"));
             m_engine->setAudioNormalization(sm.getBool("Audio", "Normalization", false));
             m_engine->setEqualizerEnabled(sm.getBool("Audio", "EqualizerEnabled", false));
         }
