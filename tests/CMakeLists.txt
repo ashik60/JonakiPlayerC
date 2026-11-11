@@ -153,22 +153,29 @@ target_link_libraries(PreferencesDialogTest PRIVATE
 
 add_test(NAME PreferencesDialogTest COMMAND PreferencesDialogTest)
 
-# 8. Real Media Batch Playback Integration Test
-add_executable(RealMediaPlaybackTest
-    integration/test_real_media_playback.cpp
+# 10. Frame Capture Subsystem Integration Tests
+add_executable(FrameCaptureTest
+    integration/test_frame_capture.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/ui/FrameCaptureHelper.cpp
+    ../src/settings/SettingsManager.cpp
     ../src/core/Logger.cpp
 )
 
-target_link_libraries(RealMediaPlaybackTest PRIVATE
+target_link_libraries(FrameCaptureTest PRIVATE
     Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
     Qt6::Test
     ${MPV_LIBRARIES}
 )
 
-target_compile_definitions(RealMediaPlaybackTest PRIVATE HAVE_MPV=1)
+target_compile_definitions(FrameCaptureTest PRIVATE HAVE_MPV=1)
 
 if(WIN32)
-    target_compile_definitions(RealMediaPlaybackTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
-    target_link_libraries(RealMediaPlaybackTest PRIVATE dwmapi shell32 user32)
+    target_compile_definitions(FrameCaptureTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(FrameCaptureTest PRIVATE dwmapi shell32 user32)
 endif()
+
+add_test(NAME FrameCaptureTest COMMAND FrameCaptureTest)
+

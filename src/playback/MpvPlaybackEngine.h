@@ -87,6 +87,9 @@ public:
     std::string getHwdecActive() const override;
     std::string getVideoCodec() const override;
 
+    // --- Frame Capture ---
+    bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) override;
+
     // --- Callbacks ---
     void setOnStateChanged(StateChangedCallback cb) override { m_onStateChanged = std::move(cb); }
     void setOnTimeChanged(TimeChangedCallback cb) override { m_onTimeChanged = std::move(cb); }

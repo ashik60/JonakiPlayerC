@@ -1,5 +1,6 @@
 #include "ContextMenuBuilder.h"
 #include "MainWindow.h"
+#include "FrameCaptureHelper.h"
 #include "../playback/IPlaybackEngine.h"
 #include <QFileDialog>
 #include <QInputDialog>
@@ -179,6 +180,27 @@ std::unique_ptr<QMenu> ContextMenuBuilder::buildMenu(MainWindow* parentWindow) {
     deintMenu->addAction("On", [parentWindow]() {
         parentWindow->engine()->setDeinterlacing("on");
         parentWindow->engine()->showOsdMessage("Deinterlacing: On");
+    });
+
+    videoMenu->addSeparator();
+
+    auto* capMenu = videoMenu->addMenu("Video Capture");
+    capMenu->addAction("Save Current Source Frame\tCtrl+E", [parentWindow]() {
+        FrameCaptureHelper::captureToFile(parentWindow->engine(), CaptureMode::Video, parentWindow);
+    });
+    capMenu->addAction("Save Current Screen Frame\tCtrl+Alt+E", [parentWindow]() {
+        FrameCaptureHelper::captureToFile(parentWindow->engine(), CaptureMode::Subtitles, parentWindow);
+    });
+    capMenu->addSeparator();
+    capMenu->addAction("Copy Current Source Frame\tCtrl+C", [parentWindow]() {
+        FrameCaptureHelper::captureToClipboard(parentWindow->engine(), CaptureMode::Video, parentWindow);
+    });
+    capMenu->addAction("Copy Current Screen Frame\tCtrl+Alt+C", [parentWindow]() {
+        FrameCaptureHelper::captureToClipboard(parentWindow->engine(), CaptureMode::Subtitles, parentWindow);
+    });
+    capMenu->addSeparator();
+    capMenu->addAction("Open Image Storage Folder", [parentWindow]() {
+        FrameCaptureHelper::openCaptureFolder(parentWindow);
     });
 
     // 5. Subtitles Submenu

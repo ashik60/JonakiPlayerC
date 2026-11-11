@@ -712,4 +712,52 @@ std::string MpvPlaybackEngine::getVideoCodec() const {
     return m_videoCodec;
 }
 
+bool MpvPlaybackEngine::captureFrame(const std::string& outputPath, CaptureMode mode) {
+    if (!m_initialized.load()) {
+        Logger::warning("Cannot capture frame: engine not initialized.");
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        if (m_state == PlaybackState::Stopped) {
+            Logger::warning("Cannot capture frame: playback is stopped.");
+            return false;
+        }
+    }
+
+#if defined(HAVE_MPV)
+    if (!m_mpv) return false;
+
+    const char* flag = "subtitles";
+    switch (mode) {
+        case CaptureMode::Video:
+            flag = "video";
+            break;
+        case CaptureMode::Subtitles:
+            flag = "subtitles";
+            break;
+        case CaptureMode::Window:
+            flag = "window";
+            break;
+    }
+
+    // screenshot-to-file <filename> <flags>
+    const char* cmd[] = {"screenshot-to-file", outputPath.c_str(), flag, nullptr};
+    int err = mpv_command(m_mpv, cmd);
+    if (err < 0) {
+        std::string errStr = mpv_error_string(err);
+        Logger::warning("mpv screenshot-to-file failed: " + errStr + " (path: " + outputPath + ")");
+        return false;
+    }
+
+    Logger::info("Frame captured successfully: " + outputPath + " [mode=" + std::string(flag) + "]");
+    return true;
+#else
+    (void)outputPath;
+    (void)mode;
+    return true;
+#endif
+}
+
 } // namespace Jonaki

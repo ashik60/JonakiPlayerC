@@ -145,6 +145,18 @@ public:
     std::string getHwdecActive() const override { return "no"; }
     std::string getVideoCodec() const override { return "h264"; }
 
+    bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) override {
+        if (!m_initialized || m_loadedPath.empty() || m_state == PlaybackState::Stopped) {
+            return false;
+        }
+        m_lastCapturedPath = outputPath;
+        m_lastCaptureMode = mode;
+        return true;
+    }
+
+    const std::string& lastCapturedPath() const { return m_lastCapturedPath; }
+    CaptureMode lastCaptureMode() const { return m_lastCaptureMode; }
+
     void setOnStateChanged(StateChangedCallback cb) override { m_onStateChanged = std::move(cb); }
     void setOnTimeChanged(TimeChangedCallback cb) override { m_onTimeChanged = std::move(cb); }
     void setOnTrackListChanged(TrackListChangedCallback cb) override { m_onTrackListChanged = std::move(cb); }
@@ -170,6 +182,8 @@ private:
     std::string m_deinterlaceMode = "off";
     std::string m_aspectRatio = "default";
     std::vector<TrackInfo> m_tracks;
+    std::string m_lastCapturedPath;
+    CaptureMode m_lastCaptureMode = CaptureMode::Subtitles;
 
     StateChangedCallback m_onStateChanged;
     TimeChangedCallback m_onTimeChanged;

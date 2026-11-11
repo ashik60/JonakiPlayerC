@@ -41,6 +41,15 @@ enum class PlaybackError {
 };
 
 /**
+ * @brief Frame capture mode options for video screenshots.
+ */
+enum class CaptureMode {
+    Video,      ///< Original video frame at native resolution without subtitle or OSD overlays
+    Subtitles,  ///< Video frame with subtitle overlays rendered
+    Window      ///< Rendered mpv video output with subtitles and OSD overlays
+};
+
+/**
  * @brief Pure abstract playback engine interface.
  * 
  * This interface isolates all multimedia operations from specific engine
@@ -119,6 +128,9 @@ public:
     // --- Hardware Decoding Introspection ---
     virtual std::string getHwdecActive() const = 0;
     virtual std::string getVideoCodec() const = 0;
+
+    // --- Frame Capture ---
+    virtual bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) = 0;
 
     // --- Callbacks & Observers ---
     using StateChangedCallback = std::function<void(PlaybackState)>;

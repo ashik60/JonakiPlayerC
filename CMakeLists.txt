@@ -130,6 +130,8 @@ set(UI_SOURCES
     src/ui/PlaylistDrawer.h
     src/ui/ContextMenuBuilder.cpp
     src/ui/ContextMenuBuilder.h
+    src/ui/FrameCaptureHelper.cpp
+    src/ui/FrameCaptureHelper.h
     src/ui/PreferencesDialog.cpp
     src/ui/PreferencesDialog.h
     src/ui/preferences/PreferencesPageBase.cpp

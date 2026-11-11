@@ -5,6 +5,10 @@
 #include "ContextMenuBuilder.h"
 #include "PlaylistDrawer.h"
 #include "PreferencesDialog.h"
+#include "FrameCaptureHelper.h"
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QPlainTextEdit>
 #include "../playlist/PlaylistController.h"
 #include "../playlist/ResumeStore.h"
 #include "../subtitles/SubtitleManager.h"
@@ -307,11 +311,33 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
             }
             break;
         case Qt::Key_E:
-            if (event->modifiers() & Qt::ShiftModifier) {
+            if (event->modifiers() & Qt::ControlModifier) {
+                if (event->modifiers() & Qt::AltModifier) {
+                    FrameCaptureHelper::captureToFile(m_engine.get(), CaptureMode::Subtitles, this);
+                } else {
+                    FrameCaptureHelper::captureToFile(m_engine.get(), CaptureMode::Video, this);
+                }
+            } else if (event->modifiers() & Qt::ShiftModifier) {
                 if (m_engine) {
                     bool eq = !m_engine->isEqualizerEnabled();
                     m_engine->setEqualizerEnabled(eq);
                     m_engine->showOsdMessage(eq ? "Equalizer: Enabled" : "Equalizer: Disabled");
+                }
+            }
+            break;
+        case Qt::Key_C:
+            if (event->modifiers() & Qt::ControlModifier) {
+                QWidget* focused = focusWidget();
+                if (focused && (qobject_cast<QLineEdit*>(focused) ||
+                                qobject_cast<QTextEdit*>(focused) ||
+                                qobject_cast<QPlainTextEdit*>(focused))) {
+                    QMainWindow::keyPressEvent(event);
+                    return;
+                }
+                if (event->modifiers() & Qt::AltModifier) {
+                    FrameCaptureHelper::captureToClipboard(m_engine.get(), CaptureMode::Subtitles, this);
+                } else {
+                    FrameCaptureHelper::captureToClipboard(m_engine.get(), CaptureMode::Video, this);
                 }
             }
             break;
