@@ -113,6 +113,11 @@ set(SUBTITLE_SOURCES
     src/subtitles/SubtitleManager.h
 )
 
+set(NETWORK_SOURCES
+    src/network/UrlValidator.cpp
+    src/network/UrlValidator.h
+)
+
 set(UI_SOURCES
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
@@ -132,6 +137,8 @@ set(UI_SOURCES
     src/ui/ContextMenuBuilder.h
     src/ui/FrameCaptureHelper.cpp
     src/ui/FrameCaptureHelper.h
+    src/ui/OpenUrlDialog.cpp
+    src/ui/OpenUrlDialog.h
     src/ui/PreferencesDialog.cpp
     src/ui/PreferencesDialog.h
     src/ui/preferences/PreferencesPageBase.cpp
@@ -162,6 +169,7 @@ add_executable(JonakiPlayer
     ${CORE_SOURCES}
     ${SETTINGS_SOURCES}
     ${INPUT_SOURCES}
+    ${NETWORK_SOURCES}
     ${PLAYBACK_SOURCES}
     ${PLAYLIST_SOURCES}
     ${SUBTITLE_SOURCES}

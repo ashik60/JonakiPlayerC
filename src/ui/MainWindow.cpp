@@ -5,7 +5,9 @@
 #include "ContextMenuBuilder.h"
 #include "PlaylistDrawer.h"
 #include "PreferencesDialog.h"
+#include "OpenUrlDialog.h"
 #include "FrameCaptureHelper.h"
+#include "../network/UrlValidator.h"
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QPlainTextEdit>
@@ -325,6 +327,11 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
                 }
             }
             break;
+        case Qt::Key_U:
+            if (event->modifiers() & Qt::ControlModifier) {
+                openUrlDialog();
+            }
+            break;
         case Qt::Key_C:
             if (event->modifiers() & Qt::ControlModifier) {
                 QWidget* focused = focusWidget();
@@ -443,6 +450,22 @@ bool MainWindow::nativeEvent(const QByteArray& eventType, void* message, qintptr
         return true;
     }
     return QMainWindow::nativeEvent(eventType, message, result);
+}
+
+void MainWindow::openUrlDialog() {
+    OpenUrlDialog dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        QString url = dlg.getUrl();
+        if (!url.isEmpty()) {
+            if (m_playlistController) {
+                m_playlistController->addPath(url);
+                int lastIdx = m_playlistController->model()->rowCount() - 1;
+                m_playlistController->playIndex(lastIdx);
+            } else if (m_engine) {
+                m_engine->loadMedia(url.toStdString());
+            }
+        }
+    }
 }
 
 void MainWindow::openPreferencesDialog(int categoryIndex, int subPageIndex) {

@@ -1,6 +1,7 @@
 #include "ContextMenuBuilder.h"
 #include "MainWindow.h"
 #include "FrameCaptureHelper.h"
+#include "OpenUrlDialog.h"
 #include "../playback/IPlaybackEngine.h"
 #include <QFileDialog>
 #include <QInputDialog>
@@ -28,11 +29,7 @@ std::unique_ptr<QMenu> ContextMenuBuilder::buildMenu(MainWindow* parentWindow) {
         }
     });
     openMenu->addAction("Open URL...\tCtrl+U", [parentWindow]() {
-        bool ok = false;
-        QString url = QInputDialog::getText(parentWindow, "Open URL", "Enter media stream URL:", QLineEdit::Normal, "", &ok);
-        if (ok && !url.isEmpty()) {
-            parentWindow->engine()->loadMedia(url.toStdString());
-        }
+        parentWindow->openUrlDialog();
     });
 
     menu->addSeparator();

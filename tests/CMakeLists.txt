@@ -179,3 +179,46 @@ endif()
 
 add_test(NAME FrameCaptureTest COMMAND FrameCaptureTest)
 
+# 11. Open URL Dialog Unit Tests
+add_executable(OpenUrlDialogTest
+    unit/test_open_url_dialog.cpp
+    ../src/ui/OpenUrlDialog.cpp
+    ../src/network/UrlValidator.cpp
+    ../src/settings/SettingsManager.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(OpenUrlDialogTest PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+)
+
+add_test(NAME OpenUrlDialogTest COMMAND OpenUrlDialogTest)
+
+# 12. Network Streaming Integration Tests
+add_executable(NetworkStreamingTest
+    integration/test_network_streaming.cpp
+    ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(NetworkStreamingTest PRIVATE
+    Qt6::Core
+    Qt6::Network
+    Qt6::Test
+    ${MPV_LIBRARIES}
+)
+
+target_compile_definitions(NetworkStreamingTest PRIVATE HAVE_MPV=1)
+
+if(WIN32)
+    target_compile_definitions(NetworkStreamingTest PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(NetworkStreamingTest PRIVATE dwmapi shell32 user32)
+endif()
+
+add_test(NAME NetworkStreamingTest COMMAND NetworkStreamingTest)
+
+
