@@ -20,44 +20,73 @@ In the JonakiPlayer engineering discipline:
 ## 2. Preferences Hierarchy & Dialog Resource Disambiguation
 
 ### 2.1 Empirical Dialog Resource Audit (REV-018)
-A comprehensive audit of `Language/English.ini` (5,626 lines) and the `RT_DIALOG` resource catalog in `PotPlayer64.dll` resolved the dialog mapping topology and corrected previously conflated dialog numbers:
+A comprehensive audit of `Language/English.ini` (5,626 lines) and the `RT_DIALOG` resource catalog in `PotPlayer64.dll` resolved the dialog mapping topology, reconciled the **24 leaf sub-pages** across the 6 master categories (7 + 3 + 4 + 4 + 3 + 3 = 24), and distinguished directly observed dialog templates from inferred sub-pages:
 
-| Category | Page / Node | Dialog ID | Reference PotPlayer Title / Controls | Empirical Resolution |
+| Category | Page / Node | Dialog ID | Reference PotPlayer Title / Controls | Classification & Resolution |
 |---|---|---|---|---|
-| **Shell** | Preferences Container | **Dialog 324** | `3035=&Reset`, `3042=&Export Settings...`, `3043=&Apply` | Master dialog shell hosting tree, stack, and actions |
-| **General** | General Settings | **Dialog 354** | `3073=Snap to edge/window`, `3072=Show tooltips`, `3083=Store settings into .ini file` | Window snapping, tooltip display, INI toggle, focus |
-| **General** | Startup | **Dialog 354/355** | `3116=Automatically run at startup`, `3123=Default window size` | Startup window geometry, remember position |
-| **General** | OSD | **Dialog 375** | `3044=Filename`, `3049=Subtitle name`, `3050=Playback time`, `3053=Codec info` | On-Screen Display format, duration, font |
-| **General** | Logo | **Dialog 378** | `3191=Logo Settings`, `3192=Logo (starting)`, `3193=Logo (off)` | Playback idle/loading logo display |
-| **General** | Mouse | **Dialog 366** | `3381=Mouse Settings`, `3034=Left Button single click`, `3035=Mouse drag` | Click actions, double click, wheel mapping |
-| **General** | Keyboard / Hotkeys | **Dialog 367** | `3021=Add...`, `3027=Edit...`, `3034=Turn on global media control keys` | Keyboard shortcut assignments and global hotkeys |
-| **General** | Skin | **Dialog 376** | `3381=Skin Settings`, `3024=Open Skin Folder`, `3076=System dark mode` | Skin selection, dark mode, skinned context menus |
-| **Playback** | Playback Settings | **Dialog 358** | `3061=Remember video playback positions`, `3083=Prevent screen saver` | Playback history, repeat modes, screensaver inhibit |
-| **Playback** | Time Jump | **Dialog 364** | `3034=Jump to keyframe`, `3021=Default` (short/medium/long jump intervals) | Jump step sizes (default 5s, 30s, 60s) |
-| **Playback** | Repeat & Resume | **Dialog 358/377** | `3083=Return to previous preset`, `3040=Copy preset values` | Resume thresholds, auto-repeat loop conditions |
-| **Video** | Video Settings | **Dialog 366** | Aspect ratio presets (Default, 16:9, 4:3, 16:10, 1:1), deinterlace mode | Aspect ratio override, YADIF/hardware deinterlace |
-| **Video** | Video Renderer & HWDEC | **Dialog 355/360** | `3040=Enable VMR Mixing Mode`, `3052=Color range`, `3110=Built-in DXVA Settings` | Direct3D11 / OpenGL render surface, HWDEC profile |
-| **Video** | Color & Level Control | **Dialog 371** | `3381=Input:`, `3293=Level control`, `3294=Offset control`, `3061=Full range (Y: 0~255)` | Brightness, contrast, saturation, full/limited range |
-| **Video** | Resizing & Cropping | **Dialog 369/374** | `3285=Video Resizing`, `3293=Video Extending/Cropping` | Aspect scaling, video padding, crop borders |
-| **Audio** | Audio Output & Speakers | **Dialog 356** | `3381=Speakers:`, `3057=Enable`, `3061=Pass-through`, `3094=Expand stereo` | Output device selection, speaker channels (stereo/5.1) |
-| **Audio** | Volume Normalizer | **dynaudnorm** | Peak target, max amplification, frame length | Real-time dynamic audio normalizer (`Shift+N`) |
-| **Audio** | 10-Band Equalizer | **Dialog 363** | `3021=Preset`, `3066=Enable`, `3072=SuperEQ`, `3024=0 dB` (31Hz–16kHz) | 10-band sliders (-12dB to +12dB), pre-amp, presets |
-| **Audio** | Audio Delay & Codec | **Dialog 361** | `3110=Built-in Audio Codec/Pass-through Settings` | Audio sync offset (+/-0.05s steps), codec routing |
-| **Subtitles** | Subtitle Language & Priority| **Dialog 368** | `3034=Prioritize specified folders`, Language matching | External subtitle directory search, language priority |
-| **Subtitles** | Font & Styling | **Dialog 353** | `3040=Show subtitles`, `3041=Absolute size`, `3043=Font face`, `3044=Font color` | ASS font family, point size, outline, shadow, colors |
-| **Subtitles** | Sync & Placement | **Dialog 374** | Subtitle vertical margin, delay stepping (+/-0.5s) | Screen placement, horizontal/vertical margins, sync |
-| **Filter Control**| Source / Splitter | **Dialog 325/350** | `3024=Source/Splitter`, `3110=Built-in Source/Splitter Settings` | Demuxer selection, network buffer cache size |
-| **Filter Control**| Video Decoder Profiles | **Dialog 360** | `3110=Built-in Video Codec/DXVA Settings`, `3311=Video Decoder` | libmpv decoder priority, D3D11VA/DXVA2 hardware profiles |
-| **Filter Control**| Audio Decoder Profiles | **Dialog 361** | `3110=Built-in Audio Codec/Pass-through Settings`, `3311=Audio Decoder` | FFmpeg audio decoder, S/PDIF pass-through |
+| **Shell** | Preferences Container | **Dialog 324** | `3035=&Reset`, `3042=&Export Settings...`, `3043=&Apply` | [DIRECTLY-OBSERVED] Master dialog shell hosting tree, stack, and action buttons |
+| **General** | General Settings | **Dialog 354** | `3073=Snap to edge/window`, `3072=Show tooltips`, `3083=Store settings into .ini file` | [DIRECTLY-OBSERVED] Window snapping, tooltip display, INI toggle, focus |
+| **General** | Startup | **Dialog 354/355** | `3116=Automatically run at startup`, `3123=Default window size` | [INFERRED] Synthesizes startup window geometry, initial volume, and position restore |
+| **General** | OSD | **Dialog 375** | `3044=Filename`, `3049=Subtitle name`, `3050=Playback time`, `3053=Codec info` | [DIRECTLY-OBSERVED] On-Screen Display format, duration, font |
+| **General** | Logo | **Dialog 378** | `3191=Logo Settings`, `3192=Logo (starting)`, `3193=Logo (off)` | [DIRECTLY-OBSERVED] Playback idle/loading logo display |
+| **General** | Mouse | **Dialog 366** | `3381=Mouse Settings`, `3034=Left Button single click`, `3035=Mouse drag` | [DIRECTLY-OBSERVED] Click actions, double click, wheel mapping |
+| **General** | Keyboard / Hotkeys | **Dialog 367** | `3021=Add...`, `3027=Edit...`, `3034=Turn on global media control keys` | [DIRECTLY-OBSERVED] Keyboard shortcut assignments and global hotkeys |
+| **General** | Skin | **Dialog 376** | `3381=Skin Settings`, `3024=Open Skin Folder`, `3076=System dark mode` | [DIRECTLY-OBSERVED] Skin selection, dark mode, skinned context menus |
+| **Playback** | Playback Settings | **Dialog 358** | `3061=Remember video playback positions`, `3083=Prevent screen saver` | [DIRECTLY-OBSERVED] Playback history, repeat modes, screensaver inhibit |
+| **Playback** | Time Jump | **Dialog 364** | `3034=Jump to keyframe`, `3021=Default` (short/medium/long jump intervals) | [DIRECTLY-OBSERVED] Jump step sizes (default 5s, 30s, 60s) |
+| **Playback** | Repeat & Resume | **Dialog 358/377** | `3083=Return to previous preset`, `3040=Copy preset values` | [INFERRED] Synthesizes repeat mode selection, SQLite resume threshold, and auto-resume |
+| **Video** | Video Settings | **Dialog 366** | Aspect ratio presets (Default, 16:9, 4:3, 16:10, 1:1), deinterlace mode | [INFERRED] Combines menu-driven aspect ratios with deinterlacing controls |
+| **Video** | Video Renderer & HWDEC | **Dialog 355/360** | `3040=Enable VMR Mixing Mode`, `3052=Color range`, `3110=Built-in DXVA Settings` | [DIRECTLY-OBSERVED] Direct3D11 / OpenGL render surface, HWDEC profile |
+| **Video** | Color & Level Control | **Dialog 371** | `3381=Input:`, `3293=Level control`, `3294=Offset control`, `3061=Full range (Y: 0~255)` | [DIRECTLY-OBSERVED] Brightness, contrast, saturation, full/limited range |
+| **Video** | Resizing & Cropping | **Dialog 369/374** | `3285=Video Resizing`, `3293=Video Extending/Cropping` | [DIRECTLY-OBSERVED] Aspect scaling, video padding, crop borders |
+| **Audio** | Audio Output & Speakers | **Dialog 356** | `3381=Speakers:`, `3057=Enable`, `3061=Pass-through`, `3094=Expand stereo` | [DIRECTLY-OBSERVED] Output device selection, speaker channels (stereo/5.1) |
+| **Audio** | Volume Normalizer | **dynaudnorm** | Peak target, max amplification, frame length | [INFERRED] Dedicated sub-page for real-time dynamic audio normalizer (`Shift+N`) |
+| **Audio** | 10-Band Equalizer | **Dialog 363** | `3021=Preset`, `3066=Enable`, `3072=SuperEQ`, `3024=0 dB` (31Hz–16kHz) | [DIRECTLY-OBSERVED] 10-band sliders (-12dB to +12dB), pre-amp, presets |
+| **Audio** | Audio Delay & Codec | **Dialog 361** | `3110=Built-in Audio Codec/Pass-through Settings` | [DIRECTLY-OBSERVED] Audio sync offset (+/-0.05s steps), codec routing |
+| **Subtitles** | Subtitle Language & Priority| **Dialog 368** | `3034=Prioritize specified folders`, Language matching | [DIRECTLY-OBSERVED] External subtitle directory search, language priority |
+| **Subtitles** | Font & Styling | **Dialog 353** | `3040=Show subtitles`, `3041=Absolute size`, `3043=Font face`, `3044=Font color` | [DIRECTLY-OBSERVED] ASS font family, point size, outline, shadow, colors |
+| **Subtitles** | Sync & Placement | **Dialog 374** | Subtitle vertical margin, delay stepping (+/-0.5s) | [INFERRED] Screen placement, horizontal/vertical margins, sync stepping |
+| **Filter Control**| Source / Splitter | **Dialog 325/350** | `3024=Source/Splitter`, `3110=Built-in Source/Splitter Settings` | [DIRECTLY-OBSERVED] Demuxer selection, network buffer cache size |
+| **Filter Control**| Video Decoder Profiles | **Dialog 360** | `3110=Built-in Video Codec/DXVA Settings`, `3311=Video Decoder` | [DIRECTLY-OBSERVED] libmpv decoder priority, D3D11VA/DXVA2 hardware profiles |
+| **Filter Control**| Audio Decoder Profiles | **Dialog 361** | `3110=Built-in Audio Codec/Pass-through Settings`, `3311=Audio Decoder` | [DIRECTLY-OBSERVED] FFmpeg audio decoder, S/PDIF pass-through |
 
 *(Note: The duplicate Dialog 371 mapping in the preliminary draft is resolved. Video Color/Level control is Dialog 371; Audio Output & Speakers is Dialog 356; 10-Band Equalizer is Dialog 363).*
 
-### 2.2 Complete Two-Level Navigation Hierarchy
-The Preferences dialog implements the full two-level hierarchy in `QTreeWidget`:
+### 2.2 Complete Two-Level Navigation Hierarchy (Exactly 24 Leaf Items)
+The Preferences dialog implements the full two-level hierarchy in `QTreeWidget` with **24 verified leaf nodes**:
 ```
-Preferences (F5) [Baseline: 751x564 at 96 DPI]
-├── General
-│   ├── General Settings
+Preferences (F5) [Baseline: 751x564 at 96 DPI - 24 Leaf Items]
+├── General (7 leaf items)
+│   ├── General Settings [Dialog 354 - Directly Observed]
+│   ├── Startup [Dialog 354/355 - Inferred]
+│   ├── OSD [Dialog 375 - Directly Observed]
+│   ├── Logo [Dialog 378 - Directly Observed]
+│   ├── Mouse [Dialog 366 - Directly Observed]
+│   ├── Keyboard / Hotkeys [Dialog 367 - Directly Observed]
+│   └── Skin / Theme [Dialog 376 - Directly Observed]
+├── Playback (3 leaf items)
+│   ├── Playback Settings [Dialog 358 - Directly Observed]
+│   ├── Time Jump [Dialog 364 - Directly Observed]
+│   └── Repeat & Resume [Dialog 358/377 - Inferred]
+├── Video (4 leaf items)
+│   ├── Video Settings [Dialog 366 - Inferred]
+│   ├── Video Renderer & HWDEC [Dialog 355/360 - Directly Observed]
+│   ├── Color & Level Control [Dialog 371 - Directly Observed]
+│   └── Resizing & Cropping [Dialog 369/374 - Directly Observed]
+├── Audio (4 leaf items)
+│   ├── Audio Output & Speakers [Dialog 356 - Directly Observed]
+│   ├── Volume Normalizer [dynaudnorm - Inferred]
+│   ├── 10-Band Equalizer [Dialog 363 - Directly Observed]
+│   └── Audio Delay & Codec [Dialog 361 - Directly Observed]
+├── Subtitles (3 leaf items)
+│   ├── Subtitle Language & Priority [Dialog 368 - Directly Observed]
+│   ├── Font & Styling [Dialog 353 - Directly Observed]
+│   └── Sync & Placement [Dialog 374 - Inferred]
+└── Filter Control (3 leaf items)
+    ├── Source / Splitter [Dialog 325/350 - Directly Observed]
+    ├── Video Decoder Profiles [Dialog 360 - Directly Observed]
+    └── Audio Decoder Profiles [Dialog 361 - Directly Observed]
+```
 │   ├── Startup
 │   ├── OSD
 │   ├── Logo
