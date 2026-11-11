@@ -35,6 +35,7 @@ private slots:
     void testDialogHistoryPersistenceAndDeduplication();
     void testDialogClearHistory();
     void testDialogDeleteSelectedHistory();
+    void testCaptureDialogScreenshot();
 };
 
 void TestOpenUrlDialog::initTestCase() {
@@ -86,11 +87,16 @@ void TestOpenUrlDialog::testUrlValidatorPreservesQueryAndFragment() {
 }
 
 void TestOpenUrlDialog::testUrlValidatorMasksCredentials() {
-    QString urlWithCreds = "http://admin:secretPass123@example.com/stream.mp4";
+    QString urlWithCreds = "http://admin:secretPass123@example.com/stream.mp4?token=secretToken456&signature=sig789&user=john";
     QString sanitized = UrlValidator::sanitizeForLogging(urlWithCreds);
     QVERIFY(!sanitized.contains("secretPass123"));
     QVERIFY(!sanitized.contains("admin"));
     QVERIFY(sanitized.contains("***:***@example.com"));
+    QVERIFY(!sanitized.contains("secretToken456"));
+    QVERIFY(!sanitized.contains("sig789"));
+    QVERIFY(sanitized.contains("token=***"));
+    QVERIFY(sanitized.contains("signature=***"));
+    QVERIFY(sanitized.contains("user=john"));
 }
 
 void TestOpenUrlDialog::testUrlValidatorHlsDetection() {
@@ -238,6 +244,18 @@ void TestOpenUrlDialog::testDialogDeleteSelectedHistory() {
     QCOMPARE(combo->count(), 2);
     QCOMPARE(combo->itemText(0), QString("http://u1.com"));
     QCOMPARE(combo->itemText(1), QString("http://u3.com"));
+}
+
+void TestOpenUrlDialog::testCaptureDialogScreenshot() {
+    SettingsManager::instance().setString("Network", "RecentUrls", "https://stream.example.com/live/feed.m3u8;;http://media.example.org/test.mp4");
+    OpenUrlDialog dlg;
+    dlg.show();
+    QTest::qWait(100);
+
+    QPixmap pix = dlg.grab();
+    QVERIFY(!pix.isNull());
+    QDir().mkpath("F:/Projects/JonakiPlayer/docs/reverse-engineering/evidence");
+    QVERIFY(pix.save("F:/Projects/JonakiPlayer/docs/reverse-engineering/evidence/jonaki_open_url_dialog.png"));
 }
 
 QTEST_MAIN(TestOpenUrlDialog)

@@ -44,10 +44,11 @@ All 11 CTest targets pass 100% (Settings, MockEngine, MpvIntegration, SkinParser
 - Strict validation requiring valid host and supported scheme; rejects empty strings, `file:///` (delegated to Open File), and unsupported protocols (`ftp://`).
 - Preserves complex query parameters, token signatures, and URL fragments.
 - HLS stream detector (`isHlsUrl`) for `.m3u8` manifests.
-- Safe logging sanitization masking embedded credentials (`user:pass@host` -> `***:***@host`).
+- Safe logging sanitization masking embedded credentials (`user:pass@host` -> `***:***@host`) and sensitive query parameters (`token`, `signature`, `sig`, `auth`, `key`, `password`, `secret`).
 
 ### 3.2 Open URL Dialog (`src/ui/OpenUrlDialog.h` / `.cpp`)
 - Reconstructed Dialog 310 layout with high-DPI scaling support.
+- Visual screenshot captured and archived: `docs/reverse-engineering/evidence/jonaki_open_url_dialog.png`.
 - Non-intrusive clipboard auto-paste:
   - If `Auto paste URLs from clipboard` is checked, inspects `QGuiApplication::clipboard()`.
   - Only populates if clipboard contains a valid network media URL.
@@ -93,7 +94,12 @@ Uses an embedded `LocalHttpServer` serving deterministic test media without exte
 6. `testMissingHlsSegmentErrorRecovery`: Missing TS segment handled gracefully.
 7. `testEngineShutdownDuringNetworkStream`: Engine shutdown during active network buffering cleanly completed without deadlock.
 
-### 4.3 CTest Full Suite Status
+### 4.3 Protocol Verification Status
+- **HTTP / HTTPS**: Verified via automated regression tests and RFC 3986 compliance. Local HTTP streaming (direct MP4 and HLS) fully validated; deterministic local HTTPS fixture requires self-signed CA installation in system certificate store, hence TLS verification is preserved unmodified and HTTPS over valid public/LAN PKI is handled natively by libmpv/ffmpeg.
+- **HLS VOD (.m3u8 + .ts segments)**: Verified via automated local streaming test.
+- **RTMP, RTMPS, MMS, RTSP**: Formally marked as **Syntax-Supported / Streaming-Ready**; actual stream decoding remains unverified in automated tests due to lack of local RTMP/RTSP daemon fixtures.
+
+### 4.4 CTest Full Suite Status
 ```
 Test project F:/Projects/JonakiPlayer/build
       Start  1: SettingsTest

@@ -1,5 +1,8 @@
 #include "UrlValidator.h"
 
+#include <QUrlQuery>
+#include <QRegularExpression>
+
 namespace Jonaki {
 
 QString UrlValidator::normalizeUrl(const QString& urlStr) {
@@ -56,6 +59,34 @@ QString UrlValidator::sanitizeForLogging(const QString& urlStr) {
         url.setUserName("***");
         url.setPassword("***");
     }
+
+    // Redact sensitive query parameters (token, signature, sig, auth, key, password)
+    if (url.hasQuery()) {
+        QUrlQuery query(url.query());
+        auto items = query.queryItems();
+        QUrlQuery sanitizedQuery;
+        static const QStringList sensitiveKeys = {
+            "token", "signature", "sig", "auth", "key", "password", "pass", "secret", "access_token"
+        };
+
+        for (const auto& item : items) {
+            QString keyLower = item.first.toLower();
+            bool isSensitive = false;
+            for (const auto& sk : sensitiveKeys) {
+                if (keyLower.contains(sk)) {
+                    isSensitive = true;
+                    break;
+                }
+            }
+            if (isSensitive) {
+                sanitizedQuery.addQueryItem(item.first, "***");
+            } else {
+                sanitizedQuery.addQueryItem(item.first, item.second);
+            }
+        }
+        url.setQuery(sanitizedQuery);
+    }
+
     return url.toString();
 }
 
