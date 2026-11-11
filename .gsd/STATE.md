@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-11T09:20:00+06:00
+updated: 2026-11-11T11:05:00+06:00
 ---
 
 # Project State
@@ -13,34 +13,29 @@ updated: 2026-11-11T09:20:00+06:00
 
 ## Last Action
 
-- Completed and verified Wave 7.2: Frame Capture Subsystem & Snapshot Management (`cd93e48`).
-- Extended `IPlaybackEngine.h` with `enum class CaptureMode { Video, Subtitles, Window }` and `virtual bool captureFrame(const std::string& outputPath, CaptureMode mode) = 0`.
-- Implemented `captureFrame()` in `MpvPlaybackEngine` using libmpv's `screenshot-to-file` with proper mode flags (`video`, `subtitles`, `window`) and UTF-8 path handling.
-- Implemented `FrameCaptureHelper` in the UI layer (`src/ui/FrameCaptureHelper.h/.cpp`):
-  - Configurable capture folder with fallback to `Pictures/JonakiPlayer`.
-  - Collision-safe unique timestamped filenames (`Jonaki_YYYYMMDD_HHMMSS_mmm.png`).
-  - Directory verification and automatic creation.
-  - Asynchronous non-blocking file capture with OSD notification feedback.
-  - Safe clipboard image capture using temporary file, `QImage` loading, and `QGuiApplication::clipboard()->setImage()`.
-  - Folder reveal via `QDesktopServices::openUrl()`.
-- Added shortcuts and menus:
-  - `Ctrl+E`: Capture source frame (video).
-  - `Ctrl+Alt+E`: Capture screen frame (subtitles).
-  - `Ctrl+C`: Copy source frame to clipboard (with fallback to standard text copy when text widget is focused).
-  - `Ctrl+Alt+C`: Copy screen frame to clipboard.
-  - Video Capture submenu in context menu with all actions.
-- Implemented comprehensive integration test suite `tests/integration/test_frame_capture.cpp` registered as `FrameCaptureTest`.
-- Verified 100% pass across all 9 CTest targets in 30.64s.
+- Completed and verified Wave 7.3: Open URL & Network Streaming (`01d1f9e`).
+- Implemented `UrlValidator` (`src/network/UrlValidator.h/.cpp`) supporting HTTP, HTTPS, RTMP, and RTMPS schemes, HLS (.m3u8) detection, credential sanitization for diagnostics, and parameter/fragment preservation.
+- Implemented `OpenUrlDialog` (`src/ui/OpenUrlDialog.h/.cpp`) reconstructing PotPlayer's Dialog 310 layout:
+  - Header prompt ("Input the URL of the stream or file to be played.") and subtext example.
+  - Editable URL ComboBox with history dropdown.
+  - "Auto paste URLs from clipboard", "Process subtitles", and "Store only entered URLs" options.
+  - "Clear all", "Delete selected", "Open" (Default / Enter), and "Cancel" (Escape) buttons.
+  - Non-intrusive clipboard auto-paste (only when auto-paste enabled and valid URL on clipboard; never overwrites user-entered text).
+  - Most-recent-first history persistence through `SettingsManager` with deduplication and 20-item cap.
+- Integrated `Ctrl+U` shortcut in `MainWindow` and wired "Open URL...\tCtrl+U" in context menu, directly appending opened stream URLs to the playlist and starting playback.
+- Generated deterministic local HLS VOD fixture with `.m3u8` playlist and `.ts` transport stream segments in `tests/test_data/hls/`.
+- Implemented unit test suite `tests/unit/test_open_url_dialog.cpp` (`OpenUrlDialogTest`) covering URL scheme validation, invalid formatting, credential masking, clipboard auto-paste, manual input preservation, and history persistence/deduplication/clearing (14 passing cases).
+- Implemented integration test suite `tests/integration/test_network_streaming.cpp` (`NetworkStreamingTest`) featuring an embedded `LocalHttpServer` covering direct HTTP MP4 playback, HLS VOD streaming, HTTP 302 redirects, HTTP 404 error transitions, invalid M3U8 handling, missing HLS segment recovery, and clean engine shutdown during buffering.
+- Verified 100% pass across all 11 CTest targets in 32.89s.
 
 ## Next Steps
 
-1. Begin Wave 7.3: Open URL & Network Streaming:
-   - Implement `UrlValidator` supporting HTTP, HTTPS, HLS (`.m3u8`), DASH (`.mpd`), and RTMP.
-   - Implement `OpenUrlDialog` with URL history combobox, auto-clipboard paste toggle, and Dialog geometry matching PotPlayer reference.
-   - Implement URL history persistence in `SettingsManager`.
-   - Wire `Ctrl+U` shortcut and File -> Open URL menu item.
-   - Create local HTTP test server harness for automated HLS stream playback test.
-   - Implement `tests/integration/test_network_streaming.cpp` and register into CTest.
+1. Begin Wave 7.4: Hardware-Decoding Profiles & A-B Repeat Loop:
+   - Investigate and verify supported hardware decoding profiles in bundled libmpv/MSYS2 UCRT64 environment (e.g. `d3d11va`, `d3d11va-copy`, `auto-safe`, `no`).
+   - Implement dynamic runtime `hwdec` switching through `MpvPlaybackEngine` and observe active decoder via `hwdec-current`.
+   - Implement A-B repeat mechanism (`ab-loop-a`, `ab-loop-b`, `ab-loop-clear`) with keyboard shortcuts `[` (set A), `]` (set B), `\` (clear).
+   - Add A-B repeat seekbar tick markers in `BottomControlBar`.
+   - Implement `tests/integration/test_hwdec_ab_loop.cpp` and register into CTest.
 
 ## Active Decisions
 
