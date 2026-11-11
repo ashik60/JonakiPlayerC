@@ -32,6 +32,7 @@ public:
     ~MainWindow() override;
 
     IPlaybackEngine* engine() const;
+    void openPreferencesDialog(int categoryIndex = 0, int subPageIndex = 0);
 
 protected:
     void closeEvent(QCloseEvent* event) override;

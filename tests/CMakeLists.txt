@@ -128,6 +128,30 @@ endif()
 
 add_test(NAME AudioVideoFilterTest COMMAND AudioVideoFilterTest)
 
+# 9. Preferences Dialog & Settings Transaction Unit Tests
+add_executable(PreferencesDialogTest
+    unit/test_preferences_dialog.cpp
+    ../src/settings/SettingsManager.cpp
+    ../src/settings/SettingsTransaction.cpp
+    ../src/ui/PreferencesDialog.cpp
+    ../src/ui/preferences/GeneralPreferencesPage.cpp
+    ../src/ui/preferences/PlaybackPreferencesPage.cpp
+    ../src/ui/preferences/VideoPreferencesPage.cpp
+    ../src/ui/preferences/AudioPreferencesPage.cpp
+    ../src/ui/preferences/SubtitlePreferencesPage.cpp
+    ../src/ui/preferences/FilterControlPreferencesPage.cpp
+    ../src/core/Logger.cpp
+)
+
+target_link_libraries(PreferencesDialogTest PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::Test
+)
+
+add_test(NAME PreferencesDialogTest COMMAND PreferencesDialogTest)
+
 # 8. Real Media Batch Playback Integration Test
 add_executable(RealMediaPlaybackTest
     integration/test_real_media_playback.cpp

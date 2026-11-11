@@ -77,6 +77,8 @@ set(CORE_SOURCES
 set(SETTINGS_SOURCES
     src/settings/SettingsManager.cpp
     src/settings/SettingsManager.h
+    src/settings/SettingsTransaction.cpp
+    src/settings/SettingsTransaction.h
 )
 
 set(INPUT_SOURCES
@@ -128,6 +130,21 @@ set(UI_SOURCES
     src/ui/PlaylistDrawer.h
     src/ui/ContextMenuBuilder.cpp
     src/ui/ContextMenuBuilder.h
+    src/ui/PreferencesDialog.cpp
+    src/ui/PreferencesDialog.h
+    src/ui/preferences/PreferencesPageBase.h
+    src/ui/preferences/GeneralPreferencesPage.cpp
+    src/ui/preferences/GeneralPreferencesPage.h
+    src/ui/preferences/PlaybackPreferencesPage.cpp
+    src/ui/preferences/PlaybackPreferencesPage.h
+    src/ui/preferences/VideoPreferencesPage.cpp
+    src/ui/preferences/VideoPreferencesPage.h
+    src/ui/preferences/AudioPreferencesPage.cpp
+    src/ui/preferences/AudioPreferencesPage.h
+    src/ui/preferences/SubtitlePreferencesPage.cpp
+    src/ui/preferences/SubtitlePreferencesPage.h
+    src/ui/preferences/FilterControlPreferencesPage.cpp
+    src/ui/preferences/FilterControlPreferencesPage.h
 )
 
 set(APP_SOURCES

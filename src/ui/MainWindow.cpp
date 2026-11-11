@@ -4,6 +4,7 @@
 #include "FramelessWindowHelper.h"
 #include "ContextMenuBuilder.h"
 #include "PlaylistDrawer.h"
+#include "PreferencesDialog.h"
 #include "../playlist/PlaylistController.h"
 #include "../playlist/ResumeStore.h"
 #include "../subtitles/SubtitleManager.h"
@@ -371,6 +372,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
                 }
             }
             break;
+        case Qt::Key_F5:
+            openPreferencesDialog();
+            break;
         case Qt::Key_Return:
         case Qt::Key_Enter:
             if (isFullScreen()) showNormal();
@@ -413,6 +417,24 @@ bool MainWindow::nativeEvent(const QByteArray& eventType, void* message, qintptr
         return true;
     }
     return QMainWindow::nativeEvent(eventType, message, result);
+}
+
+void MainWindow::openPreferencesDialog(int categoryIndex, int subPageIndex) {
+    PreferencesDialog dlg(this);
+    dlg.selectCategoryAndSubPage(categoryIndex, subPageIndex);
+    connect(&dlg, &PreferencesDialog::settingsApplied, this, [this]() {
+        auto& sm = SettingsManager::instance();
+        if (m_engine) {
+            m_engine->setAspectRatio(sm.getString("Video", "AspectRatio", "Default"));
+            m_engine->setDeinterlacing(sm.getString("Video", "DeinterlaceMode", "off"));
+            m_engine->setAudioNormalization(sm.getBool("Audio", "Normalization", false));
+            m_engine->setEqualizerEnabled(sm.getBool("Audio", "EqualizerEnabled", false));
+        }
+        if (m_subtitleManager) {
+            m_subtitleManager->setVisibility(sm.getBool("Subtitles", "ShowSubtitles", true));
+        }
+    });
+    dlg.exec();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

@@ -223,7 +223,7 @@ std::unique_ptr<QMenu> ContextMenuBuilder::buildMenu(MainWindow* parentWindow) {
 
     // 6. Preferences & About
     menu->addAction("Preferences...\tF5", [parentWindow]() {
-        QMessageBox::information(parentWindow, "Preferences", "Preferences Dialog (751x564) scheduled for Milestone M7.");
+        parentWindow->openPreferencesDialog();
     });
     menu->addAction("About JonakiPlayer...\tF1", [parentWindow]() {
         QMessageBox::about(parentWindow, "About JonakiPlayer", "JonakiPlayer v0.1.0\nClean-Room PotPlayer Reimplementation\nC++20, Qt 6, libmpv");
