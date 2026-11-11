@@ -13,24 +13,23 @@ updated: 2026-11-09T11:00:00+06:00
 
 ## Last Action
 
-- Completed rigorous technical audit of real-world media playback verification across 85 files in `E:\Video Song`.
-- Restructured `docs/testing/real_media_test_report.md` to explicitly define and evaluate the 7-stage playback pipeline (Demuxing -> State Playing -> PTS Progression -> Video Decoding -> OpenGL FBO Render -> Audio Decoding -> Audio Sink Delivery).
-- Explicitly documented the 85 tests as playback smoke tests (0.5s–2.0s initialization, decode start, time progression over 66.5s runtime), separating them from full 12.54 hour playback.
-- Clarified boundaries between automated headless testing (packet decoding, filter compilation) vs. interactive GUI playback (OpenGL FBO rasterization and WASAPI audio delivery).
-- Formally separated filter graph compilation validity from subjective acoustic quality.
-- Qualified memory stability observations (zero crashes, leaks, or zombie threads across 85 consecutive sessions vs. formal heap leak instrumentation).
-- Verified `test_real_media_playback.cpp` compiles and all 7 core CTest targets pass 100%.
-- Verified `E:\Video Song` remains completely untouched.
+- Completed and verified Wave 7.1: Preferences Dialog Hierarchy & Transactional Settings Architecture.
+- Implemented `SettingsTransaction` staging buffer (`src/settings/SettingsTransaction.h/.cpp`) with dirty tracking, commit, discard, reset to defaults, and INI export.
+- Implemented `PreferencesPageBase` abstract class and 6 modular category pages (`GeneralPreferencesPage`, `PlaybackPreferencesPage`, `VideoPreferencesPage`, `AudioPreferencesPage`, `SubtitlePreferencesPage`, `FilterControlPreferencesPage`) covering all 22 leaf sub-pages from the verified PotPlayer dialog topology.
+- Implemented `PreferencesDialog` (`src/ui/PreferencesDialog.h/.cpp`) matching the 751x564 px baseline geometry at 96 DPI with automatic High-DPI scaling, left category navigation tree, stacked pages, and bottom Dialog 324 action buttons (Reset, Export Settings, OK, Cancel, Apply).
+- Wired `F5` hotkey and Context Menu ("Preferences...\tF5") to launch `PreferencesDialog`.
+- Implemented `tests/unit/test_preferences_dialog.cpp` with 7 test cases covering transaction staging, discard, defaults reset, INI export, dialog geometry, tree navigation across all 22 leaf pages, Apply/Cancel transactional semantics, and page reset.
+- Verified 100% pass across all 8 CTest targets in 16.03s.
+- Committed atomically in `ce35ac9`.
 
 ## Next Steps
 
-1. Begin Milestone M7 implementation:
-   - Implement Preferences Tree Dialog (`src/ui/PreferencesDialog.h/.cpp`) matching PotPlayer baseline (751x564 px).
-   - Implement Frame Capture tool (`Ctrl+E` instant frame save to PNG with/without subtitle overlays).
-   - Implement Open URL Dialog (`Ctrl+U`) supporting direct HTTP, HTTPS, and HLS `.m3u8` streams.
-   - Implement Hardware Decoding Selection UI and persistence (D3D11VA, DXVA2, copy-back, auto, off).
-2. Add automated unit/integration tests for M7 features and verify 100% CTest pass.
-3. Capture runtime evidence screenshot and generate M7 completion report.
+1. Begin Wave 7.2: Frame Capture Subsystem & Snapshot Management:
+   - Extend `IPlaybackEngine.h` with `captureFrame(const std::string& outputPath, CaptureMode mode)`.
+   - Implement `screenshot-to-file` in `MpvPlaybackEngine` supporting `video`, `subtitles`, and `window` modes.
+   - Implement `FrameCaptureHelper` in UI layer for directory configuration, timestamping (`Jonaki_YYYYMMDD_HHMMSS_mmm.png`), overwrite prevention, and temporary file clipboard copying (`Ctrl+C` / `Ctrl+Alt+C`).
+   - Wire `Ctrl+E`, `Ctrl+Alt+E`, `Ctrl+C`, `Ctrl+Alt+C` in `MainWindow` and context menu.
+   - Implement `tests/integration/test_frame_capture.cpp` and register into CTest.
 
 ## Active Decisions
 
