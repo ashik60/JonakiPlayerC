@@ -132,6 +132,7 @@ set(UI_SOURCES
     src/ui/ContextMenuBuilder.h
     src/ui/PreferencesDialog.cpp
     src/ui/PreferencesDialog.h
+    src/ui/preferences/PreferencesPageBase.cpp
     src/ui/preferences/PreferencesPageBase.h
     src/ui/preferences/GeneralPreferencesPage.cpp
     src/ui/preferences/GeneralPreferencesPage.h

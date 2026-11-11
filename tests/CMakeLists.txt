@@ -134,6 +134,7 @@ add_executable(PreferencesDialogTest
     ../src/settings/SettingsManager.cpp
     ../src/settings/SettingsTransaction.cpp
     ../src/ui/PreferencesDialog.cpp
+    ../src/ui/preferences/PreferencesPageBase.cpp
     ../src/ui/preferences/GeneralPreferencesPage.cpp
     ../src/ui/preferences/PlaybackPreferencesPage.cpp
     ../src/ui/preferences/VideoPreferencesPage.cpp

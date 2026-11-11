@@ -36,6 +36,7 @@ void GeneralPreferencesPage::setupUi() {
     auto* grp0 = new QGroupBox("General Window & Behavioral Settings", page0);
     auto* v0 = new QVBoxLayout(grp0);
     m_chkSnapToEdge = new QCheckBox("Snap window to edge of screen and adjacent windows", grp0);
+    m_chkSnapToEdge->setObjectName("chkSnapToEdge");
     m_chkShowTooltips = new QCheckBox("Show informative tooltips on control bar buttons", grp0);
     m_chkStoreIniFile = new QCheckBox("Store settings into .ini file (portable mode)", grp0);
     m_chkPauseOnFocusLost = new QCheckBox("Pause playback when window loses focus", grp0);

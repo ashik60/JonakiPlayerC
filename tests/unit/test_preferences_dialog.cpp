@@ -171,7 +171,7 @@ void TestPreferencesDialog::testApplyAndCancelSemantics() {
     QVERIFY(!dlg.hasUnappliedChanges());
 
     // Toggle snap-to-edge checkbox on General page
-    auto* chkSnap = dlg.findChild<QCheckBox*>();
+    auto* chkSnap = dlg.findChild<QCheckBox*>("chkSnapToEdge");
     QVERIFY(chkSnap != nullptr);
     chkSnap->setChecked(!chkSnap->isChecked());
 
@@ -185,7 +185,7 @@ void TestPreferencesDialog::testApplyAndCancelSemantics() {
     PreferencesDialog dlg2;
     QSignalSpy spy(&dlg2, &PreferencesDialog::settingsApplied);
 
-    auto* chkSnap2 = dlg2.findChild<QCheckBox*>();
+    auto* chkSnap2 = dlg2.findChild<QCheckBox*>("chkSnapToEdge");
     QVERIFY(chkSnap2 != nullptr);
     chkSnap2->setChecked(false);
 
