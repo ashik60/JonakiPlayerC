@@ -1,5 +1,5 @@
 ---
-updated: 2026-11-09T11:00:00+06:00
+updated: 2026-11-11T09:20:00+06:00
 ---
 
 # Project State
@@ -13,23 +13,34 @@ updated: 2026-11-09T11:00:00+06:00
 
 ## Last Action
 
-- Completed and verified Wave 7.1: Preferences Dialog Hierarchy & Transactional Settings Architecture.
-- Implemented `SettingsTransaction` staging buffer (`src/settings/SettingsTransaction.h/.cpp`) with dirty tracking, commit, discard, reset to defaults, and INI export.
-- Implemented `PreferencesPageBase` abstract class and 6 modular category pages (`GeneralPreferencesPage`, `PlaybackPreferencesPage`, `VideoPreferencesPage`, `AudioPreferencesPage`, `SubtitlePreferencesPage`, `FilterControlPreferencesPage`) covering all 22 leaf sub-pages from the verified PotPlayer dialog topology.
-- Implemented `PreferencesDialog` (`src/ui/PreferencesDialog.h/.cpp`) matching the 751x564 px baseline geometry at 96 DPI with automatic High-DPI scaling, left category navigation tree, stacked pages, and bottom Dialog 324 action buttons (Reset, Export Settings, OK, Cancel, Apply).
-- Wired `F5` hotkey and Context Menu ("Preferences...\tF5") to launch `PreferencesDialog`.
-- Implemented `tests/unit/test_preferences_dialog.cpp` with 7 test cases covering transaction staging, discard, defaults reset, INI export, dialog geometry, tree navigation across all 22 leaf pages, Apply/Cancel transactional semantics, and page reset.
-- Verified 100% pass across all 8 CTest targets in 16.03s.
-- Committed atomically in `ce35ac9`.
+- Completed and verified Wave 7.2: Frame Capture Subsystem & Snapshot Management (`cd93e48`).
+- Extended `IPlaybackEngine.h` with `enum class CaptureMode { Video, Subtitles, Window }` and `virtual bool captureFrame(const std::string& outputPath, CaptureMode mode) = 0`.
+- Implemented `captureFrame()` in `MpvPlaybackEngine` using libmpv's `screenshot-to-file` with proper mode flags (`video`, `subtitles`, `window`) and UTF-8 path handling.
+- Implemented `FrameCaptureHelper` in the UI layer (`src/ui/FrameCaptureHelper.h/.cpp`):
+  - Configurable capture folder with fallback to `Pictures/JonakiPlayer`.
+  - Collision-safe unique timestamped filenames (`Jonaki_YYYYMMDD_HHMMSS_mmm.png`).
+  - Directory verification and automatic creation.
+  - Asynchronous non-blocking file capture with OSD notification feedback.
+  - Safe clipboard image capture using temporary file, `QImage` loading, and `QGuiApplication::clipboard()->setImage()`.
+  - Folder reveal via `QDesktopServices::openUrl()`.
+- Added shortcuts and menus:
+  - `Ctrl+E`: Capture source frame (video).
+  - `Ctrl+Alt+E`: Capture screen frame (subtitles).
+  - `Ctrl+C`: Copy source frame to clipboard (with fallback to standard text copy when text widget is focused).
+  - `Ctrl+Alt+C`: Copy screen frame to clipboard.
+  - Video Capture submenu in context menu with all actions.
+- Implemented comprehensive integration test suite `tests/integration/test_frame_capture.cpp` registered as `FrameCaptureTest`.
+- Verified 100% pass across all 9 CTest targets in 30.64s.
 
 ## Next Steps
 
-1. Begin Wave 7.2: Frame Capture Subsystem & Snapshot Management:
-   - Extend `IPlaybackEngine.h` with `captureFrame(const std::string& outputPath, CaptureMode mode)`.
-   - Implement `screenshot-to-file` in `MpvPlaybackEngine` supporting `video`, `subtitles`, and `window` modes.
-   - Implement `FrameCaptureHelper` in UI layer for directory configuration, timestamping (`Jonaki_YYYYMMDD_HHMMSS_mmm.png`), overwrite prevention, and temporary file clipboard copying (`Ctrl+C` / `Ctrl+Alt+C`).
-   - Wire `Ctrl+E`, `Ctrl+Alt+E`, `Ctrl+C`, `Ctrl+Alt+C` in `MainWindow` and context menu.
-   - Implement `tests/integration/test_frame_capture.cpp` and register into CTest.
+1. Begin Wave 7.3: Open URL & Network Streaming:
+   - Implement `UrlValidator` supporting HTTP, HTTPS, HLS (`.m3u8`), DASH (`.mpd`), and RTMP.
+   - Implement `OpenUrlDialog` with URL history combobox, auto-clipboard paste toggle, and Dialog geometry matching PotPlayer reference.
+   - Implement URL history persistence in `SettingsManager`.
+   - Wire `Ctrl+U` shortcut and File -> Open URL menu item.
+   - Create local HTTP test server harness for automated HLS stream playback test.
+   - Implement `tests/integration/test_network_streaming.cpp` and register into CTest.
 
 ## Active Decisions
 
