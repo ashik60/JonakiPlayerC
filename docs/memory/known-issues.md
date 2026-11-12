@@ -21,6 +21,21 @@ This document records active technical limitations, known defects, and pending f
 - **Impact:** Text files inside `Default.dsf` (e.g. `BottomVideo.txt`, `Common.txt`) are encoded as UTF-8 with Byte Order Mark (`\xef\xbb\xbf`).
 - **Resolution:** Python and C++ parsers must specify `utf-8-sig` (or strip BOM before XML parsing) to avoid syntax errors.
 
+### ISS-004: AV1 Hardware Decoding Hardware Limitation on Haswell Intel HD Graphics 4400
+- **Status:** Documented / Working as Intended
+- **Impact:** Requesting hardware decoding (`auto-safe`, `d3d11va`) on AV1 streams falls back to software `libdav1d`.
+- **Resolution:** Intel Haswell microarchitecture does not support fixed-function AV1 hardware decoding. High-performance software decoding via `libdav1d` verified and documented.
+
+### ISS-005: Frame Capture Thread-Safety & Asynchronous Operation Tracking
+- **Status:** Resolved
+- **Impact:** Raw detached thread accessing `IPlaybackEngine*` presented use-after-free risk during engine destruction.
+- **Resolution:** Implemented `mpv_command_async`, active capture counter with CV synchronization, `cancelPendingCaptures()`, and RAII `TempFileGuard`. Regression tests in `FrameCaptureTest`.
+
+### ISS-006: A-B Repeat State Reset in Native mpv Core
+- **Status:** Resolved
+- **Impact:** Stale loop bounds persisted across media load because native `ab-loop-a` and `ab-loop-b` were not cleared.
+- **Resolution:** Native properties cleared to `"no"` on `loadMedia()`, `stop()`, and `shutdown()`. Verified real playback wrapping in `ABRepeatTest`.
+
 ---
 
 ## Platform-Specific Constraints

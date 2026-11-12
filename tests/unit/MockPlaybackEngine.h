@@ -181,6 +181,16 @@ public:
         return true;
     }
 
+    bool captureFrameAsync(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles, CaptureCallback callback = nullptr) override {
+        bool ok = captureFrame(outputPath, mode);
+        if (callback) {
+            callback(ok, ok ? "" : "Mock capture failed");
+        }
+        return ok;
+    }
+
+    void cancelPendingCaptures() override {}
+
     const std::string& lastCapturedPath() const { return m_lastCapturedPath; }
     CaptureMode lastCaptureMode() const { return m_lastCaptureMode; }
 

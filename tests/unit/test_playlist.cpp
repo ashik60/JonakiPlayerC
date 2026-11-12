@@ -6,6 +6,9 @@
 #include "playlist/DplPlaylistParser.h"
 #include "playlist/ResumeStore.h"
 #include "playlist/PlaylistModel.h"
+#include "playlist/PlaylistController.h"
+#include "settings/SettingsManager.h"
+#include "MockPlaybackEngine.h"
 
 using namespace Jonaki;
 
@@ -124,6 +127,40 @@ private slots:
         // Clear
         model.clear();
         QCOMPARE(model.rowCount(), 0);
+    }
+
+    void testStoreOnlyEnteredUrlsPlaylistBehavior() {
+        MockPlaybackEngine engine;
+        QVERIFY(engine.initialize());
+
+        PlaylistController controller(&engine);
+
+        // Case 1: StoreEnteredUrlsOnly = true (default)
+        SettingsManager::instance().setBool("Network", "StoreEnteredUrlsOnly", true);
+        SettingsManager::instance().setString("Network", "RecentUrls", "");
+
+        PlaylistItem item1{1, "https://stream.playlist.org/feed1.m3u8", "Feed 1", 0, 0, {}};
+        controller.model()->addItem(item1);
+
+        bool played1 = controller.playIndex(0);
+        QVERIFY(played1);
+
+        // RecentUrls should remain EMPTY because StoreEnteredUrlsOnly is TRUE
+        QString recents1 = QString::fromStdString(SettingsManager::instance().getString("Network", "RecentUrls", ""));
+        QVERIFY(recents1.isEmpty());
+
+        // Case 2: StoreEnteredUrlsOnly = false
+        SettingsManager::instance().setBool("Network", "StoreEnteredUrlsOnly", false);
+
+        PlaylistItem item2{2, "https://stream.playlist.org/feed2.m3u8", "Feed 2", 0, 0, {}};
+        controller.model()->addItem(item2);
+
+        bool played2 = controller.playIndex(1);
+        QVERIFY(played2);
+
+        // RecentUrls should now CONTAIN feed2 because StoreEnteredUrlsOnly is FALSE
+        QString recents2 = QString::fromStdString(SettingsManager::instance().getString("Network", "RecentUrls", ""));
+        QVERIFY(recents2.contains("https://stream.playlist.org/feed2.m3u8"));
     }
 };
 

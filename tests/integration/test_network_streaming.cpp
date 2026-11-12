@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QSignalSpy>
 #include <QThread>
+#include <QProcess>
 
 #include "../../src/playback/MpvPlaybackEngine.h"
 #include "../../src/network/UrlValidator.h"
@@ -144,8 +145,11 @@ private slots:
     void testInvalidM3u8Handling();
     void testMissingHlsSegmentErrorRecovery();
     void testEngineShutdownDuringNetworkStream();
+    void testHttpsWithTrustedCertificate();
+    void testHttpsWithUntrustedCertificateRejected();
 
 private:
+    int startPythonHttpsServer(QProcess& proc, const QString& certFile, const QString& keyFile);
     std::unique_ptr<LocalHttpServer> m_server;
     std::unique_ptr<MpvPlaybackEngine> m_engine;
     QString m_serverBaseDir;
@@ -267,6 +271,82 @@ void TestNetworkStreaming::testEngineShutdownDuringNetworkStream() {
     // Immediately shutdown during buffering/network loading
     m_engine->shutdown();
     QVERIFY(!m_engine->isInitialized());
+}
+
+int TestNetworkStreaming::startPythonHttpsServer(QProcess& proc, const QString& certFile, const QString& keyFile) {
+    QString scriptPath = "F:/Projects/JonakiPlayer/scripts/test_https_server.py";
+    QString certPath = "F:/Projects/JonakiPlayer/" + certFile;
+    QString keyPath = "F:/Projects/JonakiPlayer/" + keyFile;
+    QString dirPath = "F:/Projects/JonakiPlayer/tests/test_data";
+
+    QStringList args;
+    args << scriptPath << "--cert" << certPath << "--key" << keyPath << "--dir" << dirPath;
+
+    proc.setProgram("python");
+    proc.setArguments(args);
+    proc.start();
+    if (!proc.waitForStarted(5000)) {
+        return -1;
+    }
+
+    QByteArray line;
+    for (int i = 0; i < 50; ++i) {
+        if (proc.canReadLine()) {
+            line = proc.readLine();
+            break;
+        }
+        proc.waitForReadyRead(100);
+    }
+    QString str = QString::fromUtf8(line).trimmed();
+    if (!str.startsWith("READY:")) {
+        return -1;
+    }
+    return str.mid(6).trimmed().toInt();
+}
+
+void TestNetworkStreaming::testHttpsWithTrustedCertificate() {
+    QProcess proc;
+    int port = startPythonHttpsServer(proc, "tests/test_data/certs/server.crt", "tests/test_data/certs/server.key");
+    QVERIFY(port > 0);
+
+    // Set CA file for mpv strict certificate verification
+    QString caPath = "F:/Projects/JonakiPlayer/tests/test_data/certs/ca.crt";
+    m_engine->setTlsCaFile(caPath.toStdString());
+    QCOMPARE(m_engine->getTlsCaFile(), caPath.toStdString());
+
+    QString httpsUrl = QString("https://127.0.0.1:%1/test_video_aac.mp4").arg(port);
+    QVERIFY(UrlValidator::isValidMediaUrl(httpsUrl));
+
+    bool loaded = m_engine->loadMedia(httpsUrl.toStdString());
+    QVERIFY(loaded);
+
+    // Playback should start and advance under validated TLS
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getState() == PlaybackState::Playing, 8000);
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 8000);
+
+    m_engine->stop();
+    proc.kill();
+    proc.waitForFinished(2000);
+}
+
+void TestNetworkStreaming::testHttpsWithUntrustedCertificateRejected() {
+    QProcess proc;
+    int port = startPythonHttpsServer(proc, "tests/test_data/certs/untrusted.crt", "tests/test_data/certs/untrusted.key");
+    QVERIFY(port > 0);
+
+    // Configure CA file that does NOT trust the self-signed untrusted cert
+    QString caPath = "F:/Projects/JonakiPlayer/tests/test_data/certs/ca.crt";
+    m_engine->setTlsCaFile(caPath.toStdString());
+
+    QString httpsUrl = QString("https://127.0.0.1:%1/test_video_aac.mp4").arg(port);
+    m_engine->loadMedia(httpsUrl.toStdString());
+
+    // Because certificate validation is strictly enabled (tls-verify=yes) and untrusted.crt is rejected,
+    // playback MUST fail and state should settle to Stopped
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getState() == PlaybackState::Stopped, 6000);
+
+    proc.kill();
+    proc.waitForFinished(2000);
 }
 
 QTEST_MAIN(TestNetworkStreaming)

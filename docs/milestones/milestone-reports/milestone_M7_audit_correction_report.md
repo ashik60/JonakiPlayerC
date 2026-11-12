@@ -186,12 +186,16 @@ The previous Milestone M7 completion report claimed unconditional verification (
 
 ---
 
-## 3. Required Remediations (Scheduled for Quality Hardening)
+## 3. Required Remediations & Execution Status
 
-1. **HTTPS Validation Fixture:** Introduce a TLS test fixture or verify external HTTPS streaming with certificate validation.
-2. **Wire Subtitle Flag:** In `MainWindow::openUrlDialog()`, query `dlg.isProcessSubtitlesEnabled()` and forward it to `SubtitleManager::setEnabled()` or configure libmpv `sub-auto`.
-3. **Playlist & Drag-Drop History Hook:** In `PlaylistController`, check `SettingsManager::instance().getBool("Network", "StoreEnteredUrlsOnly")`. If `false`, append played stream URLs to `RecentUrls`.
-4. **Expand Redaction Table:** Add `x-amz-credential`, `hdnts`, `exp`, `hmac`, `policy` to `UrlValidator::sensitiveKeys`.
-5. **HWDEC Reporting Separation:** In UI and documentation, explicitly separate active decoder results for H.264 (hardware accelerated) vs AV1 (software fallback on legacy hardware).
-6. **A-B Repeat Playback Wrap Test & Cleanup:** Call `mpv_set_property_string(m_mpv, "ab-loop-a", "no")` in `loadMedia()`, and implement an integration test that verifies playback wrapping across Point B.
-7. **Thread-Safe Capture Worker:** Replace `std::thread().detach()` in `FrameCaptureHelper` with a tracked, joinable worker or `QThreadPool` / `QFutureWatcher` tied to application/engine lifecycle.
+All identified defects have been remediated and verified with empirical test evidence:
+
+1. **HTTPS Validation Fixture:** Remediated. Standalone Python TLS test fixture `scripts/test_https_server.py` with `ca.crt`, `server.crt`, and `untrusted.crt`. Strict certificate verification configured in libmpv (`tls-ca-file`, `tls-verify=yes`). Verified in `NetworkStreamingTest` (`testHttpsWithTrustedCertificate` and `testHttpsWithUntrustedCertificateRejected`).
+2. **Wire Subtitle Flag:** Remediated. In `MainWindow::openUrlDialog()`, `dlg.isProcessSubtitlesEnabled()` is forwarded to `SubtitleManager::setNetworkSubtitleProcessingEnabled()` and `IPlaybackEngine::setSubtitleVisibility()`. Verified in `OpenUrlDialogTest`.
+3. **Playlist & Drag-Drop History Hook:** Remediated. In `PlaylistController::playIndex()`, stream URLs are added to `RecentUrls` when `StoreEnteredUrlsOnly=false` and suppressed when `true`. Documented setting behavior. Verified in `PlaylistTest` and `OpenUrlDialogTest`.
+4. **Expand Redaction Table:** Remediated. Added AWS (`x-amz-*`), Akamai (`hdnts`, `hdnea`), CloudFront (`policy`, `key-pair-id`), Google Cloud (`googleaccessid`, `x-goog-*`), and Azure SAS (`sig`, `se`, `sp`, `sv`, `sr`) tokens with case-insensitive and percent-encoded handling. Preserved non-sensitive parameters. Verified in `OpenUrlDialogTest`.
+5. **HWDEC Reporting Separation:** Remediated. Documented and verified that H.264 uses hardware acceleration (`d3d11va`), while AV1 uses software decoder `libdav1d` due to host Haswell silicon constraints. Verified in `HwdecProfileTest`.
+6. **A-B Repeat Playback Wrap Test & Cleanup:** Remediated. Reset native `ab-loop-a` and `ab-loop-b` to `"no"` on `loadMedia()`, `stop()`, and `shutdown()`. Added real playback wrapping test from 1.0s to 0.5s in `ABRepeatTest`.
+7. **Thread-Safe Capture Worker:** Remediated. Removed `std::thread().detach()`. Switched to `mpv_command_async`, active operation registry with condition variable, RAII `TempFileGuard`, and cancellation during shutdown/engine destruction. Verified in `FrameCaptureTest`.
+
+See `docs/milestones/milestone-reports/milestone_M7_remediation_report.md` for full test execution logs and verification artifacts.

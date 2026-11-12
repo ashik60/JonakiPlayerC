@@ -201,3 +201,13 @@ endif()
 # Enable Testing
 enable_testing()
 add_subdirectory(tests)
+
+# Installation Rules & Clean-Room Packaging Manifest
+# Explicitly packages only the compiled application and independently authored native assets.
+# Strictly excludes all reference spritesheets, proprietary skin dumps, and test media.
+install(TARGETS JonakiPlayer DESTINATION bin)
+install(DIRECTORY resources/skins/ DESTINATION share/jonaki/skins
+        PATTERN "reference" EXCLUDE
+        PATTERN "*.dsf" EXCLUDE
+        PATTERN "*.bmp" EXCLUDE
+)

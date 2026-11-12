@@ -102,8 +102,14 @@ public:
     bool isLoopActive() const override;
     void toggleLoop() override;
 
+    // --- TLS / HTTPS Security ---
+    void setTlsCaFile(const std::string& path) override;
+    std::string getTlsCaFile() const override;
+
     // --- Frame Capture ---
     bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) override;
+    bool captureFrameAsync(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles, CaptureCallback callback = nullptr) override;
+    void cancelPendingCaptures() override;
 
     // --- Callbacks ---
     void setOnStateChanged(StateChangedCallback cb) override { m_onStateChanged = std::move(cb); }
@@ -149,10 +155,21 @@ private:
     mutable std::string m_hwdecActive = "no";
     mutable std::string m_videoCodec;
     std::string m_currentMediaUri;
+    std::string m_tlsCaFile;
     double m_loopA = -1.0;
     double m_loopB = -1.0;
     bool m_loopActive = false;
     std::vector<TrackInfo> m_tracks;
+
+    struct PendingCapture {
+        uint64_t id{0};
+        std::string outputPath;
+        CaptureMode mode{CaptureMode::Subtitles};
+        CaptureCallback callback;
+    };
+    std::atomic<uint64_t> m_captureSeq{0};
+    mutable std::mutex m_captureMutex;
+    std::unordered_map<uint64_t, PendingCapture> m_pendingCaptures;
 
     StateChangedCallback m_onStateChanged;
     TimeChangedCallback m_onTimeChanged;

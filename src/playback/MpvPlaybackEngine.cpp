@@ -1,5 +1,6 @@
 #include "MpvPlaybackEngine.h"
 #include "../core/Logger.h"
+#include "../network/UrlValidator.h"
 #include <sstream>
 #include <cstring>
 #include <algorithm>
@@ -83,10 +84,11 @@ bool MpvPlaybackEngine::initialize() {
 }
 
 void MpvPlaybackEngine::shutdown() {
-    if (!m_initialized.load()) {
+    if (!m_initialized.exchange(false)) {
         return;
     }
 
+    cancelPendingCaptures();
     m_running.store(false);
 
 #if defined(HAVE_MPV)
@@ -101,9 +103,14 @@ void MpvPlaybackEngine::shutdown() {
     }
 
 #if defined(HAVE_MPV)
-    if (m_mpv) {
-        mpv_terminate_destroy(m_mpv);
-        m_mpv = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(m_captureMutex);
+        if (m_mpv) {
+            mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+            mpv_set_property_string(m_mpv, "ab-loop-b", "no");
+            mpv_terminate_destroy(m_mpv);
+            m_mpv = nullptr;
+        }
     }
 #endif
 
@@ -112,10 +119,12 @@ void MpvPlaybackEngine::shutdown() {
         m_state = PlaybackState::Stopped;
         m_currentTime = 0.0;
         m_duration = 0.0;
+        m_loopA = -1.0;
+        m_loopB = -1.0;
+        m_loopActive = false;
         m_tracks.clear();
     }
 
-    m_initialized.store(false);
     Logger::info("libmpv engine shut down cleanly.");
 }
 
@@ -162,6 +171,26 @@ void MpvPlaybackEngine::handleMpvEvent(void* eventPtr) {
                 if (m_onError) m_onError(PlaybackError::InvalidMedia, errStr);
             }
             if (m_onStateChanged) m_onStateChanged(m_state);
+            break;
+        }
+        case MPV_EVENT_COMMAND_REPLY: {
+            uint64_t replyId = event->reply_userdata;
+            PendingCapture cap;
+            bool found = false;
+            {
+                std::lock_guard<std::mutex> lock(m_captureMutex);
+                auto it = m_pendingCaptures.find(replyId);
+                if (it != m_pendingCaptures.end()) {
+                    cap = std::move(it->second);
+                    m_pendingCaptures.erase(it);
+                    found = true;
+                }
+            }
+            if (found && cap.callback) {
+                bool ok = (event->error >= 0);
+                std::string msg = ok ? "" : mpv_error_string(event->error);
+                cap.callback(ok, msg);
+            }
             break;
         }
         case MPV_EVENT_PROPERTY_CHANGE: {
@@ -321,7 +350,15 @@ bool MpvPlaybackEngine::loadMedia(const std::string& pathOrUrl) {
         }
     }
 
-    Logger::info("MpvPlaybackEngine loading media: " + pathOrUrl);
+    std::string sanitizedUrl = UrlValidator::sanitizeForLogging(QString::fromStdString(pathOrUrl)).toStdString();
+    Logger::info("MpvPlaybackEngine loading media: " + sanitizedUrl);
+
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+        mpv_set_property_string(m_mpv, "ab-loop-b", "no");
+    }
+#endif
 
     {
         std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -398,6 +435,8 @@ void MpvPlaybackEngine::togglePlayPause() {
 void MpvPlaybackEngine::stop() {
 #if defined(HAVE_MPV)
     if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+        mpv_set_property_string(m_mpv, "ab-loop-b", "no");
         const char* cmd[] = {"stop", nullptr};
         mpv_command_async(m_mpv, 0, cmd);
     }
@@ -406,6 +445,9 @@ void MpvPlaybackEngine::stop() {
         std::lock_guard<std::mutex> lock(m_stateMutex);
         m_state = PlaybackState::Stopped;
         m_currentTime = 0.0;
+        m_loopA = -1.0;
+        m_loopB = -1.0;
+        m_loopActive = false;
     }
     if (m_onStateChanged) m_onStateChanged(PlaybackState::Stopped);
 }
@@ -805,39 +847,76 @@ std::string MpvPlaybackEngine::getActiveHwdecDecoder() const {
     return m_hwdecActive;
 }
 
+void MpvPlaybackEngine::setTlsCaFile(const std::string& path) {
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_tlsCaFile = path;
+    }
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        mpv_set_property_string(m_mpv, "tls-ca-file", path.c_str());
+        mpv_set_property_string(m_mpv, "tls-verify", "yes");
+    }
+#endif
+    Logger::info("Configured TLS CA certificate bundle: " + path);
+}
+
+std::string MpvPlaybackEngine::getTlsCaFile() const {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    return m_tlsCaFile;
+}
+
 void MpvPlaybackEngine::setLoopPointA(double seconds) {
     double clamped = std::max(0.0, seconds);
     std::string secStr = std::to_string(clamped);
-#if defined(HAVE_MPV)
-    if (m_mpv) {
-        mpv_set_property_string(m_mpv, "ab-loop-a", secStr.c_str());
-    }
-#endif
+    bool shouldActivate = false;
+    double currentA = clamped;
+    double currentB = -1.0;
     {
         std::lock_guard<std::mutex> lock(m_stateMutex);
         m_loopA = clamped;
-        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) {
-            m_loopActive = true;
+        currentB = m_loopB;
+        shouldActivate = (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA);
+        m_loopActive = shouldActivate;
+    }
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        if (shouldActivate) {
+            mpv_set_property_string(m_mpv, "ab-loop-a", std::to_string(currentA).c_str());
+            mpv_set_property_string(m_mpv, "ab-loop-b", std::to_string(currentB).c_str());
+        } else {
+            mpv_set_property_string(m_mpv, "ab-loop-a", secStr.c_str());
+            mpv_set_property_string(m_mpv, "ab-loop-b", "no");
         }
     }
+#endif
     showOsdMessage("Point A: " + secStr.substr(0, secStr.find('.') + 3) + "s", 1500);
 }
 
 void MpvPlaybackEngine::setLoopPointB(double seconds) {
     double clamped = std::max(0.0, seconds);
     std::string secStr = std::to_string(clamped);
-#if defined(HAVE_MPV)
-    if (m_mpv) {
-        mpv_set_property_string(m_mpv, "ab-loop-b", secStr.c_str());
-    }
-#endif
+    bool shouldActivate = false;
+    double currentA = -1.0;
+    double currentB = clamped;
     {
         std::lock_guard<std::mutex> lock(m_stateMutex);
         m_loopB = clamped;
-        if (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA) {
-            m_loopActive = true;
+        currentA = m_loopA;
+        shouldActivate = (m_loopA >= 0.0 && m_loopB >= 0.0 && m_loopB > m_loopA);
+        m_loopActive = shouldActivate;
+    }
+#if defined(HAVE_MPV)
+    if (m_mpv) {
+        if (shouldActivate) {
+            mpv_set_property_string(m_mpv, "ab-loop-a", std::to_string(currentA).c_str());
+            mpv_set_property_string(m_mpv, "ab-loop-b", std::to_string(currentB).c_str());
+        } else {
+            mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+            mpv_set_property_string(m_mpv, "ab-loop-b", "no");
         }
     }
+#endif
     showOsdMessage("Point B: " + secStr.substr(0, secStr.find('.') + 3) + "s", 1500);
 }
 
@@ -845,6 +924,7 @@ void MpvPlaybackEngine::clearLoopPointA() {
 #if defined(HAVE_MPV)
     if (m_mpv) {
         mpv_set_property_string(m_mpv, "ab-loop-a", "no");
+        mpv_set_property_string(m_mpv, "ab-loop-b", "no");
     }
 #endif
     std::lock_guard<std::mutex> lock(m_stateMutex);
@@ -856,6 +936,7 @@ void MpvPlaybackEngine::clearLoopPointA() {
 void MpvPlaybackEngine::clearLoopPointB() {
 #if defined(HAVE_MPV)
     if (m_mpv) {
+        mpv_set_property_string(m_mpv, "ab-loop-a", "no");
         mpv_set_property_string(m_mpv, "ab-loop-b", "no");
     }
 #endif
@@ -903,16 +984,20 @@ void MpvPlaybackEngine::toggleLoop() {
 
     if (hasBoth) {
         bool nowActive = false;
+        double aVal = -1.0;
+        double bVal = -1.0;
         {
             std::lock_guard<std::mutex> lock(m_stateMutex);
             m_loopActive = !m_loopActive;
             nowActive = m_loopActive;
+            aVal = m_loopA;
+            bVal = m_loopB;
         }
 #if defined(HAVE_MPV)
         if (m_mpv) {
             if (nowActive) {
-                mpv_set_property_string(m_mpv, "ab-loop-a", std::to_string(m_loopA).c_str());
-                mpv_set_property_string(m_mpv, "ab-loop-b", std::to_string(m_loopB).c_str());
+                mpv_set_property_string(m_mpv, "ab-loop-a", std::to_string(aVal).c_str());
+                mpv_set_property_string(m_mpv, "ab-loop-b", std::to_string(bVal).c_str());
             } else {
                 mpv_set_property_string(m_mpv, "ab-loop-a", "no");
                 mpv_set_property_string(m_mpv, "ab-loop-b", "no");
@@ -926,7 +1011,7 @@ void MpvPlaybackEngine::toggleLoop() {
 }
 
 bool MpvPlaybackEngine::captureFrame(const std::string& outputPath, CaptureMode mode) {
-    if (!m_initialized.load()) {
+    if (!m_initialized.load() || !m_running.load()) {
         Logger::warning("Cannot capture frame: engine not initialized.");
         return false;
     }
@@ -940,22 +1025,16 @@ bool MpvPlaybackEngine::captureFrame(const std::string& outputPath, CaptureMode 
     }
 
 #if defined(HAVE_MPV)
+    std::lock_guard<std::mutex> lock(m_captureMutex);
     if (!m_mpv) return false;
 
     const char* flag = "subtitles";
     switch (mode) {
-        case CaptureMode::Video:
-            flag = "video";
-            break;
-        case CaptureMode::Subtitles:
-            flag = "subtitles";
-            break;
-        case CaptureMode::Window:
-            flag = "window";
-            break;
+        case CaptureMode::Video: flag = "video"; break;
+        case CaptureMode::Subtitles: flag = "subtitles"; break;
+        case CaptureMode::Window: flag = "window"; break;
     }
 
-    // screenshot-to-file <filename> <flags>
     const char* cmd[] = {"screenshot-to-file", outputPath.c_str(), flag, nullptr};
     int err = mpv_command(m_mpv, cmd);
     if (err < 0) {
@@ -971,6 +1050,85 @@ bool MpvPlaybackEngine::captureFrame(const std::string& outputPath, CaptureMode 
     (void)mode;
     return true;
 #endif
+}
+
+bool MpvPlaybackEngine::captureFrameAsync(const std::string& outputPath, CaptureMode mode, CaptureCallback callback) {
+    if (!m_initialized.load() || !m_running.load()) {
+        Logger::warning("Cannot capture frame: engine not initialized or stopping.");
+        if (callback) callback(false, "Engine not initialized");
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        if (m_state == PlaybackState::Stopped) {
+            Logger::warning("Cannot capture frame: playback is stopped.");
+            if (callback) callback(false, "Playback is stopped");
+            return false;
+        }
+    }
+
+#if defined(HAVE_MPV)
+    std::lock_guard<std::mutex> lock(m_captureMutex);
+    if (!m_mpv) {
+        if (callback) callback(false, "No active mpv handle");
+        return false;
+    }
+
+    const char* flag = "subtitles";
+    switch (mode) {
+        case CaptureMode::Video: flag = "video"; break;
+        case CaptureMode::Subtitles: flag = "subtitles"; break;
+        case CaptureMode::Window: flag = "window"; break;
+    }
+
+    uint64_t capId = ++m_captureSeq;
+    PendingCapture pending;
+    pending.id = capId;
+    pending.outputPath = outputPath;
+    pending.mode = mode;
+    pending.callback = std::move(callback);
+
+    m_pendingCaptures[capId] = std::move(pending);
+
+    const char* cmd[] = {"screenshot-to-file", outputPath.c_str(), flag, nullptr};
+    int err = mpv_command_async(m_mpv, capId, cmd);
+    if (err < 0) {
+        std::string errStr = mpv_error_string(err);
+        Logger::warning("mpv_command_async screenshot failed: " + errStr);
+        auto it = m_pendingCaptures.find(capId);
+        if (it != m_pendingCaptures.end()) {
+            auto cb = std::move(it->second.callback);
+            m_pendingCaptures.erase(it);
+            if (cb) cb(false, errStr);
+        }
+        return false;
+    }
+
+    Logger::info("Dispatched async frame capture: " + outputPath + " (id=" + std::to_string(capId) + ")");
+    return true;
+#else
+    (void)outputPath;
+    (void)mode;
+    if (callback) callback(true, "");
+    return true;
+#endif
+}
+
+void MpvPlaybackEngine::cancelPendingCaptures() {
+    std::vector<PendingCapture> cancelled;
+    {
+        std::lock_guard<std::mutex> lock(m_captureMutex);
+        for (auto& pair : m_pendingCaptures) {
+            cancelled.push_back(std::move(pair.second));
+        }
+        m_pendingCaptures.clear();
+    }
+    for (auto& cap : cancelled) {
+        if (cap.callback) {
+            cap.callback(false, "Capture cancelled");
+        }
+    }
 }
 
 } // namespace Jonaki

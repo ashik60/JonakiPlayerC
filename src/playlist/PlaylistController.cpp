@@ -2,6 +2,8 @@
 #include "ResumeStore.h"
 #include "../playback/IPlaybackEngine.h"
 #include "../core/Logger.h"
+#include "../settings/SettingsManager.h"
+#include "../network/UrlValidator.h"
 
 #include <QDirIterator>
 #include <QFileInfo>
@@ -89,12 +91,26 @@ bool PlaylistController::playIndex(int index) {
     m_currentIndex = index;
     bool success = m_engine->loadMedia(item->filePath);
     if (success) {
+        QString pathStr = QString::fromStdString(item->filePath);
+        if (UrlValidator::isValidMediaUrl(pathStr)) {
+            bool storeEnteredOnly = SettingsManager::instance().getBool("Network", "StoreEnteredUrlsOnly", true);
+            if (!storeEnteredOnly) {
+                QString historyRaw = QString::fromStdString(SettingsManager::instance().getString("Network", "RecentUrls", ""));
+                QStringList urls = historyRaw.split(";;", Qt::SkipEmptyParts);
+                int existing = urls.indexOf(pathStr);
+                if (existing >= 0) urls.removeAt(existing);
+                urls.prepend(pathStr);
+                while (urls.size() > 20) urls.removeLast();
+                SettingsManager::instance().setString("Network", "RecentUrls", urls.join(";;").toStdString());
+            }
+        }
+
         // Check for saved resume position
         int64_t resumePosMs = 0;
         int64_t durMs = 0;
         if (ResumeStore::instance().getPosition(item->filePath, resumePosMs, durMs) && resumePosMs > 5000) {
             double seekTargetSec = resumePosMs / 1000.0;
-            Logger::info("Restoring resume position: " + std::to_string(seekTargetSec) + "s for " + item->filePath);
+            Logger::info("Restoring resume position: " + std::to_string(seekTargetSec) + "s for " + UrlValidator::sanitizeForLogging(pathStr).toStdString());
             m_engine->seek(seekTargetSec, true);
         }
 

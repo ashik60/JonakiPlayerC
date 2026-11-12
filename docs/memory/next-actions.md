@@ -7,10 +7,17 @@ This file maintains the immediate, ordered implementation tasks for active sessi
 ## Active Milestone: M8 — Skin Engine Fidelity & Complete Theming
 
 ### Planning & Reconnaissance (Completed)
-1. [x] **M7 Independent Audit Correction (Part A):**
+1. [x] **M7 Independent Audit Correction & Defect Remediation:**
    - Re-examined source code, tests, and runtime evidence across 7 areas.
-   - Identified and documented defects in Subtitle checkbox wiring, playlist URL history recording, missing AV1 HWDEC empirical separation, missing A-B wrap tests, and FrameCapture detached thread safety.
-   - Published `docs/milestones/milestone-reports/milestone_M7_audit_correction_report.md` and updated `milestone_M7_completion_report.md`.
+   - Identified, remediated, and empirically verified all Priority 0 and Priority 1 findings.
+   - Remediated FrameCapture detached threads using `mpv_command_async`, active operation registry, condition variable, and RAII cleanup guard.
+   - Reset native mpv `ab-loop-a/b` properties on media load/stop/shutdown; verified actual B to A playback wrapping on real media.
+   - Wired Process Subtitles checkbox to `SubtitleManager` and engine visibility.
+   - Documented and implemented Store Only Entered URLs behavior for manual vs playlist/drag-and-drop.
+   - Expanded URL query parameter redaction to handle AWS, Akamai, CloudFront, GCS, and Azure SAS keys with case-insensitive and percent-encoded handling.
+   - Implemented local deterministic HTTPS test fixture (`scripts/test_https_server.py`) and verified strict certificate validation (trusted passes, untrusted rejected).
+   - Published `docs/milestones/milestone-reports/milestone_M7_remediation_report.md` and updated `milestone_M7_completion_report.md` and `milestone_M7_audit_correction_report.md`.
+   - Verified 13/13 CTest targets passing cleanly (100%).
 2. [x] **Reference Skin Reverse-Engineering Validation (Part B):**
    - Conducted controlled tests on PotPlayer skins (`Default.dsf`, `WindowFrame.dsf`).
    - Discovered and verified 4-frame button stride, `ColorX`/`ColorY` palette sampling, `Alignment='5'` Win32 centering, `VisParentMinWidth`/`VisMinLeft` responsive hiding, `ImageReplace` scoping, and composite scrollbars.

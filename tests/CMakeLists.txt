@@ -33,6 +33,7 @@ add_test(NAME PlaybackEngineMockTest COMMAND PlaybackEngineMockTest)
 add_executable(MpvPlaybackIntegrationTest
     integration/test_mpv_integration.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/core/Logger.cpp
 )
 
@@ -71,6 +72,9 @@ add_executable(PlaylistTest
     ../src/playlist/DplPlaylistParser.cpp
     ../src/playlist/ResumeStore.cpp
     ../src/playlist/PlaylistModel.cpp
+    ../src/playlist/PlaylistController.cpp
+    ../src/settings/SettingsManager.cpp
+    ../src/network/UrlValidator.cpp
     ../src/core/Logger.cpp
 )
 
@@ -87,6 +91,7 @@ add_executable(SubtitleTest
     unit/test_subtitles.cpp
     ../src/subtitles/SubtitleManager.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/core/Logger.cpp
 )
 
@@ -109,6 +114,7 @@ add_test(NAME SubtitleTest COMMAND SubtitleTest)
 add_executable(AudioVideoFilterTest
     unit/test_audio_video_filters.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/settings/SettingsManager.cpp
     ../src/core/Logger.cpp
 )
@@ -157,6 +163,7 @@ add_test(NAME PreferencesDialogTest COMMAND PreferencesDialogTest)
 add_executable(FrameCaptureTest
     integration/test_frame_capture.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/ui/FrameCaptureHelper.cpp
     ../src/settings/SettingsManager.cpp
     ../src/core/Logger.cpp
@@ -225,6 +232,7 @@ add_test(NAME NetworkStreamingTest COMMAND NetworkStreamingTest)
 add_executable(HwdecProfileTest
     integration/test_hwdec_profiles.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/settings/SettingsManager.cpp
     ../src/core/Logger.cpp
 )
@@ -248,6 +256,7 @@ add_test(NAME HwdecProfileTest COMMAND HwdecProfileTest)
 add_executable(ABRepeatTest
     unit/test_ab_repeat.cpp
     ../src/playback/MpvPlaybackEngine.cpp
+    ../src/network/UrlValidator.cpp
     ../src/ui/BottomControlBar.cpp
     ../src/core/Logger.cpp
 )

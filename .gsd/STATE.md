@@ -14,32 +14,22 @@ updated: 2026-11-12T08:36:00+06:00
 ## Last Action
 
 - Completed independent M7 audit correction and empirical re-examination across source code, tests, and runtime artifacts:
-  - HTTPS: Distinguished static TLS protocol linkage from demonstrated live streaming with certificate validation (reclassified to Partially Verified).
-  - Process Subtitles: Documented disconnect of `isProcessSubtitlesEnabled()` from `MainWindow::openUrlDialog()` and subtitle pipeline (reclassified to Partially Verified / Disconnected UI Feature).
-  - Store Only Entered URLs: Documented missing hooks for playlist `.dpl` and drag-and-drop URLs (reclassified to Partially Verified / Incomplete Behavior).
-  - URL Redaction: Verified uppercase/percent-encoding handling and documented omission of cloud/CDN parameters (reclassified to Partially Verified).
+  - HTTPS: Distinguished static TLS protocol linkage from demonstrated live streaming with certificate validation.
+  - Process Subtitles: Documented and remediated disconnect of `isProcessSubtitlesEnabled()` from `MainWindow::openUrlDialog()` and subtitle pipeline.
+  - Store Only Entered URLs: Documented and implemented setting semantics for manual vs playlist/drag-and-drop URLs.
+  - URL Redaction: Expanded table to handle AWS, Akamai, CloudFront, GCS, and Azure SAS keys with case-insensitive and percent-encoded handling.
   - HWDEC: Empirically separated H.264 (hardware accelerated `d3d11va`) from AV1 (software fallback `libdav1d` due to host Haswell GPU limitations).
-  - A-B Repeat: Documented lack of runtime wrap tests and missing mpv property reset on `loadMedia()`.
-  - Frame Capture: Documented thread-safety defect in `FrameCaptureHelper::captureToFile()` with unmanaged detached worker thread.
-- Produced comprehensive `docs/milestones/milestone-reports/milestone_M7_audit_correction_report.md` and updated `milestone_M7_completion_report.md` (eliminated zero defect claim).
-- Reverse-engineered PotPlayer reference skin mechanics (`Default.dsf`, `WindowFrame.dsf`):
-  - 4-frame horizontal button stride (`[Normal, Hover, Pressed, Disabled]`).
-  - Dynamic palette sampling (`ColorX`/`ColorY` into `Main.png`).
-  - `Alignment='5'` Win32 GDI centering flag -> `Qt::AlignCenter`.
-  - Responsive visibility rules (`VisParentMinWidth`, `VisMinLeft`).
-  - Scoped atlas overrides (`<ImageReplace>`).
-  - Composite scrollbars (`ScrollBar.bmp`, `ScrollBarPL.bmp`).
-  - `PlayPauseWidget` animation timing (150ms in, 350ms hold, 250ms out).
-- Generated machine-readable directive inventory: `docs/reverse-engineering/skin_directive_inventory.json` (1,714 records across all 21 reference XML/TXT layout files) and companion `docs/reverse-engineering/skin_directive_inventory.md`.
-- Updated `docs/reverse-engineering/skin-compatibility-audit.md`.
-- Finalized M8 Architecture: `docs/architecture/m8_skin_and_theme_architecture.md` (Common IR `SkinThemeModel`, single `SkinRenderer`, Zip Slip & Bomb guards, XXE prevention, malformed theme containment).
-- Authored `docs/milestones/milestone-reports/milestone_M8_implementation_plan.md` across Waves 8.1–8.4 with detailed empirical acceptance criteria.
-- **Wave 8.1 implementation is held locked pending user review.**
+  - A-B Repeat: Reset native mpv properties on media load/stop/shutdown; verified actual B to A playback wrapping on real media.
+  - Frame Capture: Remediated thread-safety defect by eliminating detached threads and implementing `mpv_command_async`, active operation tracking, and RAII cleanup guard.
+- Executed and passed all 13 CTest test targets (100% pass rate in 54.02s).
+- Produced comprehensive `docs/milestones/milestone-reports/milestone_M7_remediation_report.md`, updated `milestone_M7_audit_correction_report.md` and `milestone_M7_completion_report.md`.
+- Refined M8 directive inventory: documented 25 inspected vs 21 active layout files (explained stubs, metadata, and string table exclusions), separated 59 unique directives from 1,714 occurrence instances, and explicitly categorized evidence confidence (direct runtime observation, static resource evidence, strong inference, approximate timing).
+- **Wave 8.1 implementation remains held locked pending user review.**
 
 ## Next Steps
 
-1. Await user review and approval of the M7 Audit Correction and M8 Architecture / Implementation Plan.
-2. Upon approval, proceed to Wave 8.1: Parser Expansion & Palette Sampling.
+1. Present M7 remediation results, refined inventory, and finalized M8 architecture to the user.
+2. Await user confirmation before unlocking Wave 8.1 implementation.
 
 ## Active Decisions
 

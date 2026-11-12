@@ -43,6 +43,13 @@ public:
      * @brief Whether "Process subtitles" was checked.
      */
     bool isProcessSubtitlesEnabled() const;
+    void setProcessSubtitlesEnabled(bool enabled);
+
+    /**
+     * @brief Whether "Store only entered URLs" was checked.
+     */
+    bool isStoreEnteredUrlsOnlyEnabled() const;
+    void setStoreEnteredUrlsOnlyEnabled(bool enabled);
 
     /**
      * @brief Sets the maximum number of history items to retain.

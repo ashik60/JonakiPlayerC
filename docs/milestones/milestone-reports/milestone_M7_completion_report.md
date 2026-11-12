@@ -48,17 +48,31 @@ All 13 test targets pass cleanly when executed with the MSYS2 UCRT64 toolchain i
 
 ---
 
-## 3. Independent Audit Findings & Known Defect Register
+## 3. Independent Audit Findings & Remediation Register
 
-In accordance with clean-room engineering principles and the independent M7 re-audit, the following specific defects and partial implementations are recorded:
+In accordance with clean-room engineering principles and the independent M7 re-audit, all 7 findings were systematically remediated, validated with new integration tests, and documented in `milestone_M7_remediation_report.md`:
 
-1. **HTTPS Streaming:** Static TLS capability is verified via linked libraries, but demonstrated live HTTPS media streaming with certificate validation was not executed in automated integration tests (plain HTTP `LocalHttpServer` only). *(Partially Verified)*
-2. **Process Subtitles Checkbox:** `OpenUrlDialog::isProcessSubtitlesEnabled()` is not wired into `MainWindow::openUrlDialog()` or `SubtitleManager`. Unchecking the box has no effect on subtitle loading. *(Partially Verified / Disconnected UI Feature)*
-3. **Store Only Entered URLs:** Setting is not honored for playlist files (`.dpl`) or drag-and-drop URLs. Played stream URLs are never added to Recent URLs when the setting is false. *(Partially Verified / Incomplete Behavior)*
-4. **URL Parameter Redaction:** Provider-specific parameters (e.g. AWS `X-Amz-Credential`, Akamai `hdnts`) are omitted from the redaction table and remain unredacted in log outputs. *(Partially Verified)*
-5. **HWDEC Active Decoder Separation:** On the test host (Intel Core i5-4200U, Haswell HD Graphics 4400), H.264 is verified as hardware accelerated (`d3d11va`), while AV1 is decoded via software fallback (`libdav1d`). Hardware acceleration for AV1 is not supported by host silicon. *(Partially Verified)*
-6. **A-B Repeat Playback Wrapping:** Playback wrapping across boundary Point B back to Point A was not verified with runtime time advancement, and `loadMedia()` fails to reset underlying mpv `ab-loop` properties. *(Partially Verified)*
-7. **Frame Capture Thread Safety:** `FrameCaptureHelper::captureToFile()` spawns a detached `std::thread` holding an unmanaged raw `IPlaybackEngine*` pointer, creating a use-after-free risk during engine destruction or application shutdown. *(Partially Verified / Thread-Safety Defect)*
+1. **HTTPS Streaming & Certificate Validation:**
+   - *Audit Finding:* Static TLS capability was verified via linked libraries, but live HTTPS media streaming with certificate validation had not been executed in automated integration tests.
+   - *Remediation & Status:* **Verified.** Implemented local TLS test server (`scripts/test_https_server.py`) and configured strict certificate verification via libmpv `tls-ca-file` and `tls-verify=yes`. Validated trusted CA playback and untrusted certificate rejection in `NetworkStreamingTest`.
+2. **Process Subtitles Checkbox:**
+   - *Audit Finding:* `OpenUrlDialog::isProcessSubtitlesEnabled()` was not wired into `MainWindow::openUrlDialog()` or `SubtitleManager`.
+   - *Remediation & Status:* **Verified.** Wired checkbox value directly to `SubtitleManager::setNetworkSubtitleProcessingEnabled()` and `IPlaybackEngine::setSubtitleVisibility()`. Validated in `OpenUrlDialogTest`.
+3. **Store Only Entered URLs:**
+   - *Audit Finding:* Setting was not honored for playlist files (`.dpl`) or drag-and-drop URLs.
+   - *Remediation & Status:* **Verified.** Implemented and documented setting semantics: manual entry always records into `RecentUrls`; playlists and drag-and-drop record into `RecentUrls` only when `StoreEnteredUrlsOnly=false`. Validated in `OpenUrlDialogTest` and `PlaylistTest`.
+4. **URL Parameter Redaction:**
+   - *Audit Finding:* Provider-specific parameters (e.g. AWS `X-Amz-Credential`, Akamai `hdnts`) were omitted from the redaction table.
+   - *Remediation & Status:* **Verified.** Expanded redaction to handle AWS, Akamai, CloudFront, Google Cloud Storage, and Azure SAS parameters with case-insensitive and percent-encoded handling while preserving innocent parameters. Validated in `OpenUrlDialogTest`.
+5. **HWDEC Active Decoder Separation:**
+   - *Audit Finding:* Blanket hardware acceleration statement conflated H.264 and AV1.
+   - *Remediation & Status:* **Verified.** On the test host (Intel Core i5-4200U, Haswell HD Graphics 4400), H.264 is verified as hardware accelerated (`d3d11va`), while AV1 is explicitly identified as software fallback (`libdav1d`) due to host silicon capabilities. Validated in `HwdecProfileTest`.
+6. **A-B Repeat Playback Wrapping & State Reset:**
+   - *Audit Finding:* Playback wrapping across Point B back to Point A was not verified with runtime time advancement, and `loadMedia()` failed to reset underlying mpv `ab-loop` properties.
+   - *Remediation & Status:* **Verified.** Native mpv properties `ab-loop-a` and `ab-loop-b` are reset to `"no"` on `loadMedia()`, `stop()`, and `shutdown()`. Verified actual playback wrapping from 1.0s to 0.5s on real media in `ABRepeatTest`.
+7. **Frame Capture Thread Safety:**
+   - *Audit Finding:* `FrameCaptureHelper::captureToFile()` spawned a detached `std::thread` holding a raw `IPlaybackEngine*` pointer.
+   - *Remediation & Status:* **Verified.** Removed detached threads; replaced with `mpv_command_async`, active operation registry with condition variable, RAII temporary file guard, and cancellation during `MainWindow` close and `shutdown()`. Validated rapid captures, engine destruction during capture, and shutdown cancellation in `FrameCaptureTest`.
 
 ---
 

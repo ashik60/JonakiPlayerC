@@ -31,6 +31,9 @@ private slots:
     void testUnicodeOutputPathHandling();
     void testClipboardImageCapture();
     void testGuiResponsivenessAsyncCapture();
+    void testMultipleRapidCaptures();
+    void testDestroyEngineWithPendingCaptures();
+    void testShutdownCancellationSafety();
 
 private:
     std::unique_ptr<MpvPlaybackEngine> m_engine;
@@ -186,9 +189,15 @@ void TestFrameCapture::testClipboardImageCapture() {
     QVERIFY(m_engine->loadMedia(mediaPath.toStdString()));
     QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
 
-    // Capture to clipboard via helper
+    QGuiApplication::clipboard()->clear();
+
+    // Capture to clipboard via helper (asynchronous dispatch)
     bool ok = FrameCaptureHelper::captureToClipboard(m_engine.get(), CaptureMode::Video);
     QVERIFY(ok);
+
+    // Wait for async command reply and queued clipboard setting
+    FrameCaptureHelper::waitForPendingOperations(5000);
+    QTRY_VERIFY_WITH_TIMEOUT(!QGuiApplication::clipboard()->image().isNull(), 5000);
 
     QImage clipImg = QGuiApplication::clipboard()->image();
     QVERIFY(!clipImg.isNull());
@@ -211,8 +220,61 @@ void TestFrameCapture::testGuiResponsivenessAsyncCapture() {
     // Non-blocking requirement: dispatch must return within < 100 ms
     QVERIFY(elapsed < 100);
 
-    // Wait briefly for worker thread to complete file write
-    QTest::qWait(500);
+    // Wait for operations to complete cleanly
+    FrameCaptureHelper::waitForPendingOperations(5000);
+}
+
+void TestFrameCapture::testMultipleRapidCaptures() {
+    QString mediaPath = "F:/Projects/JonakiPlayer/tests/test_data/test_video_aac.mp4";
+    QVERIFY(m_engine->loadMedia(mediaPath.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
+
+    // Rapidly trigger 5 captures
+    for (int i = 0; i < 5; ++i) {
+        bool ok = FrameCaptureHelper::captureToFile(m_engine.get(), CaptureMode::Video);
+        QVERIFY(ok);
+    }
+
+    // Pending operations must be tracked
+    QVERIFY(FrameCaptureHelper::activeCapturesCount() >= 0);
+
+    // Wait for all to complete
+    FrameCaptureHelper::waitForPendingOperations(5000);
+    QCOMPARE(FrameCaptureHelper::activeCapturesCount(), 0);
+}
+
+void TestFrameCapture::testDestroyEngineWithPendingCaptures() {
+    auto localEngine = std::make_unique<MpvPlaybackEngine>();
+    QVERIFY(localEngine->initialize());
+    QString mediaPath = "F:/Projects/JonakiPlayer/tests/test_data/test_video_aac.mp4";
+    QVERIFY(localEngine->loadMedia(mediaPath.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(localEngine->getCurrentTime() > 0.05, 5000);
+
+    // Dispatch async capture
+    bool ok = FrameCaptureHelper::captureToFile(localEngine.get(), CaptureMode::Video);
+    QVERIFY(ok);
+
+    // Immediately cancel pending captures and shut down the engine
+    localEngine->cancelPendingCaptures();
+    localEngine->shutdown();
+    localEngine.reset(); // Destroy engine with pending operation in flight
+
+    // Must not crash or use-after-free
+    FrameCaptureHelper::waitForPendingOperations(2000);
+    QCOMPARE(FrameCaptureHelper::activeCapturesCount(), 0);
+}
+
+void TestFrameCapture::testShutdownCancellationSafety() {
+    QString mediaPath = "F:/Projects/JonakiPlayer/tests/test_data/test_video_aac.mp4";
+    QVERIFY(m_engine->loadMedia(mediaPath.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
+
+    // Dispatch capture and immediately signal cancellation
+    FrameCaptureHelper::captureToFile(m_engine.get(), CaptureMode::Video);
+    FrameCaptureHelper::cancelPendingOperations();
+    FrameCaptureHelper::waitForPendingOperations(2000);
+
+    QCOMPARE(FrameCaptureHelper::activeCapturesCount(), 0);
 }
 
 QTEST_MAIN(TestFrameCapture)

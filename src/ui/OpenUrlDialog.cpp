@@ -227,4 +227,16 @@ bool OpenUrlDialog::isProcessSubtitlesEnabled() const {
     return m_chkProcessSubtitles->isChecked();
 }
 
+void OpenUrlDialog::setProcessSubtitlesEnabled(bool enabled) {
+    m_chkProcessSubtitles->setChecked(enabled);
+}
+
+bool OpenUrlDialog::isStoreEnteredUrlsOnlyEnabled() const {
+    return m_chkStoreEnteredOnly->isChecked();
+}
+
+void OpenUrlDialog::setStoreEnteredUrlsOnlyEnabled(bool enabled) {
+    m_chkStoreEnteredOnly->setChecked(enabled);
+}
+
 } // namespace Jonaki

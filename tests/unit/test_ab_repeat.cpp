@@ -1,6 +1,7 @@
 #include <QTest>
 #include <QSignalSpy>
 #include <QFile>
+#include <mpv/client.h>
 
 #include "../../src/playback/MpvPlaybackEngine.h"
 #include "../../src/ui/BottomControlBar.h"
@@ -25,6 +26,9 @@ private slots:
     void testToggleLoopWhenConfigured();
     void testMediaLoadClearsLoopPoints();
     void testBottomControlBarMarkerUpdates();
+    void testActualPlaybackWrappingBtoA();
+    void testSeekingWhileLoopActive();
+    void testChangingMediaClearsNativeLoopProperties();
 
 private:
     std::unique_ptr<MpvPlaybackEngine> m_engine;
@@ -140,6 +144,73 @@ void TestABRepeat::testBottomControlBarMarkerUpdates() {
     // Reset loop points
     bar.setLoopPoints(-1.0, -1.0, 10.0);
     bar.repaint();
+}
+
+void TestABRepeat::testActualPlaybackWrappingBtoA() {
+    QVERIFY(m_engine->loadMedia(m_testMedia.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
+
+    // Set loop [0.5, 1.2]
+    m_engine->setLoopPointA(0.5);
+    m_engine->setLoopPointB(1.2);
+    QVERIFY(m_engine->isLoopActive());
+
+    // Verify native mpv properties are set
+    char* propA = mpv_get_property_string(m_engine->rawHandle(), "ab-loop-a");
+    char* propB = mpv_get_property_string(m_engine->rawHandle(), "ab-loop-b");
+    QVERIFY(propA != nullptr);
+    QVERIFY(propB != nullptr);
+    QVERIFY(QString(propA).startsWith("0.5"));
+    QVERIFY(QString(propB).startsWith("1.2"));
+    mpv_free(propA);
+    mpv_free(propB);
+
+    // Seek close to Point B (1.0s)
+    m_engine->seek(1.0, true);
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() >= 0.95, 3000);
+
+    // Playback should advance past 1.2 and wrap back to ~0.5s
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() >= 0.5 && m_engine->getCurrentTime() <= 0.9, 5000);
+}
+
+void TestABRepeat::testSeekingWhileLoopActive() {
+    QVERIFY(m_engine->loadMedia(m_testMedia.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
+
+    m_engine->setLoopPointA(0.5);
+    m_engine->setLoopPointB(2.0);
+    QVERIFY(m_engine->isLoopActive());
+
+    // Seek inside loop
+    m_engine->seek(1.5, true);
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() >= 1.4 && m_engine->getCurrentTime() <= 1.8, 3000);
+}
+
+void TestABRepeat::testChangingMediaClearsNativeLoopProperties() {
+    QVERIFY(m_engine->loadMedia(m_testMedia.toStdString()));
+    QTRY_VERIFY_WITH_TIMEOUT(m_engine->getCurrentTime() > 0.05, 5000);
+
+    m_engine->setLoopPointA(1.0);
+    m_engine->setLoopPointB(2.5);
+    QVERIFY(m_engine->isLoopActive());
+
+    // Load media again (simulating opening a new track)
+    QVERIFY(m_engine->loadMedia(m_testMedia.toStdString()));
+
+    // Verify internal state reset
+    QCOMPARE(m_engine->getLoopPointA(), -1.0);
+    QCOMPARE(m_engine->getLoopPointB(), -1.0);
+    QVERIFY(!m_engine->isLoopActive());
+
+    // Verify native mpv properties are "no"
+    char* propA = mpv_get_property_string(m_engine->rawHandle(), "ab-loop-a");
+    char* propB = mpv_get_property_string(m_engine->rawHandle(), "ab-loop-b");
+    QVERIFY(propA != nullptr);
+    QVERIFY(propB != nullptr);
+    QCOMPARE(QString(propA), QString("no"));
+    QCOMPARE(QString(propB), QString("no"));
+    mpv_free(propA);
+    mpv_free(propB);
 }
 
 QTEST_MAIN(TestABRepeat)

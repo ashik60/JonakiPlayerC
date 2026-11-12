@@ -143,8 +143,15 @@ public:
     virtual bool isLoopActive() const = 0;
     virtual void toggleLoop() = 0;
 
+    // --- TLS / HTTPS Security ---
+    virtual void setTlsCaFile(const std::string& path) { (void)path; }
+    virtual std::string getTlsCaFile() const { return ""; }
+
     // --- Frame Capture ---
+    using CaptureCallback = std::function<void(bool success, const std::string& message)>;
     virtual bool captureFrame(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles) = 0;
+    virtual bool captureFrameAsync(const std::string& outputPath, CaptureMode mode = CaptureMode::Subtitles, CaptureCallback callback = nullptr) = 0;
+    virtual void cancelPendingCaptures() = 0;
 
     // --- Callbacks & Observers ---
     using StateChangedCallback = std::function<void(PlaybackState)>;

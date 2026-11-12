@@ -36,6 +36,9 @@ private slots:
     void testDialogClearHistory();
     void testDialogDeleteSelectedHistory();
     void testCaptureDialogScreenshot();
+    void testUrlValidatorCaseInsensitiveAndPercentEncodedCdnParameters();
+    void testProcessSubtitlesCheckboxWiring();
+    void testStoreOnlyEnteredUrlsManualEntry();
 };
 
 void TestOpenUrlDialog::initTestCase() {
@@ -256,6 +259,104 @@ void TestOpenUrlDialog::testCaptureDialogScreenshot() {
     QVERIFY(!pix.isNull());
     QDir().mkpath("F:/Projects/JonakiPlayer/docs/reverse-engineering/evidence");
     QVERIFY(pix.save("F:/Projects/JonakiPlayer/docs/reverse-engineering/evidence/jonaki_open_url_dialog.png"));
+}
+
+void TestOpenUrlDialog::testUrlValidatorCaseInsensitiveAndPercentEncodedCdnParameters() {
+    // 1. AWS S3 signed parameters (mixed case, percent-encoded, tokens)
+    QString awsUrl = "https://s3.amazonaws.com/bucket/stream.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20261112%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261112T000000Z&X-Amz-Security-Token=AQoDYXdzEJr...&X-Amz-Signature=abcd1234efgh&user=johnDoe&video_id=987";
+    QString sanitizedAws = UrlValidator::sanitizeForLogging(awsUrl);
+    QVERIFY(!sanitizedAws.contains("AKIAIOSFODNN7EXAMPLE"));
+    QVERIFY(!sanitizedAws.contains("AQoDYXdzEJr"));
+    QVERIFY(!sanitizedAws.contains("abcd1234efgh"));
+    QVERIFY(sanitizedAws.contains("X-Amz-Credential=***"));
+    QVERIFY(sanitizedAws.contains("X-Amz-Signature=***"));
+    QVERIFY(sanitizedAws.contains("X-Amz-Security-Token=***"));
+    QVERIFY(sanitizedAws.contains("user=johnDoe"));
+    QVERIFY(sanitizedAws.contains("video_id=987"));
+
+    // 2. Akamai Token Authentication (hdnts, hdnea, uppercase)
+    QString akamaiUrl = "https://live.akamai.com/live/feed.m3u8?hdnts=exp=1700000000~acl=/*~data=fast~hmac=98765fedcba&HDNEA=exp=1800000000~hmac=xyz789&channel=sportsHD";
+    QString sanitizedAkamai = UrlValidator::sanitizeForLogging(akamaiUrl);
+    QVERIFY(!sanitizedAkamai.contains("98765fedcba"));
+    QVERIFY(!sanitizedAkamai.contains("xyz789"));
+    QVERIFY(sanitizedAkamai.contains("hdnts=***"));
+    QVERIFY(sanitizedAkamai.contains("HDNEA=***"));
+    QVERIFY(sanitizedAkamai.contains("channel=sportsHD"));
+
+    // 3. CloudFront signed URLs (Policy, Key-Pair-Id, Signature with percent encoding)
+    QString cfUrl = "https://d111111abcdef8.cloudfront.net/horizon.mkv?Policy=eyJTdGF0ZW1lbnQi...&Key%2DPair%2DId=APKAJGENFDEXAMPLE&Signature=cfSignature777&title=EpicMovie";
+    QString sanitizedCf = UrlValidator::sanitizeForLogging(cfUrl);
+    QVERIFY(!sanitizedCf.contains("eyJTdGF0ZW1lbnQi"));
+    QVERIFY(!sanitizedCf.contains("APKAJGENFDEXAMPLE"));
+    QVERIFY(!sanitizedCf.contains("cfSignature777"));
+    QVERIFY(sanitizedCf.contains("Policy=***"));
+    QVERIFY(sanitizedCf.contains("Key%2DPair%2DId=***") || sanitizedCf.contains("Key-Pair-Id=***"));
+    QVERIFY(sanitizedCf.contains("Signature=***"));
+    QVERIFY(sanitizedCf.contains("title=EpicMovie"));
+
+    // 4. Google Cloud Storage signed URLs (GoogleAccessId, x-goog-signature)
+    QString gcsUrl = "https://storage.googleapis.com/my-bucket/movie.mp4?GoogleAccessId=service@account.iam.gserviceaccount.com&x-goog-signature=gcsSignature888&x-goog-algorithm=GOOG4-RSA-SHA256&format=mp4";
+    QString sanitizedGcs = UrlValidator::sanitizeForLogging(gcsUrl);
+    QVERIFY(!sanitizedGcs.contains("service@account.iam.gserviceaccount.com"));
+    QVERIFY(!sanitizedGcs.contains("gcsSignature888"));
+    QVERIFY(sanitizedGcs.contains("GoogleAccessId=***"));
+    QVERIFY(sanitizedGcs.contains("x-goog-signature=***"));
+    QVERIFY(sanitizedGcs.contains("format=mp4"));
+
+    // 5. Azure Blob Storage SAS Token (sp, se, sv, sr, sig)
+    QString azureUrl = "https://mystorage.blob.core.windows.net/videos/clip.mp4?sp=r&se=2026-11-12T00:00:00Z&sv=2021-06-08&sr=b&sig=azureSignature999&filename=clip.mp4";
+    QString sanitizedAzure = UrlValidator::sanitizeForLogging(azureUrl);
+    QVERIFY(!sanitizedAzure.contains("azureSignature999"));
+    QVERIFY(sanitizedAzure.contains("sig=***"));
+    QVERIFY(sanitizedAzure.contains("sp=***"));
+    QVERIFY(sanitizedAzure.contains("se=***"));
+    QVERIFY(sanitizedAzure.contains("sv=***"));
+    QVERIFY(sanitizedAzure.contains("sr=***"));
+    QVERIFY(sanitizedAzure.contains("filename=clip.mp4"));
+}
+
+void TestOpenUrlDialog::testProcessSubtitlesCheckboxWiring() {
+    OpenUrlDialog dlg;
+    auto* chkSubs = dlg.findChild<QCheckBox*>("chkProcessSubtitles");
+    QVERIFY(chkSubs != nullptr);
+
+    // Default must be true (Process subtitles is checked)
+    QVERIFY(chkSubs->isChecked());
+    QVERIFY(dlg.isProcessSubtitlesEnabled());
+
+    // Toggle off
+    chkSubs->setChecked(false);
+    QVERIFY(!dlg.isProcessSubtitlesEnabled());
+
+    // Programmatic setter
+    dlg.setProcessSubtitlesEnabled(true);
+    QVERIFY(chkSubs->isChecked());
+    QVERIFY(dlg.isProcessSubtitlesEnabled());
+}
+
+void TestOpenUrlDialog::testStoreOnlyEnteredUrlsManualEntry() {
+    // With StoreEnteredUrlsOnly = true (default)
+    SettingsManager::instance().setBool("Network", "StoreEnteredUrlsOnly", true);
+    SettingsManager::instance().setString("Network", "RecentUrls", "");
+
+    OpenUrlDialog dlg1;
+    auto* combo1 = dlg1.findChild<QComboBox*>("urlCombo");
+    combo1->setEditText("https://stream1.example.com/live.m3u8");
+    dlg1.accept();
+
+    QString recents1 = QString::fromStdString(SettingsManager::instance().getString("Network", "RecentUrls", ""));
+    QCOMPARE(recents1, QString("https://stream1.example.com/live.m3u8"));
+
+    // With StoreEnteredUrlsOnly = false
+    SettingsManager::instance().setBool("Network", "StoreEnteredUrlsOnly", false);
+    OpenUrlDialog dlg2;
+    auto* combo2 = dlg2.findChild<QComboBox*>("urlCombo");
+    combo2->setEditText("https://stream2.example.com/live.m3u8");
+    dlg2.accept();
+
+    QString recents2 = QString::fromStdString(SettingsManager::instance().getString("Network", "RecentUrls", ""));
+    QVERIFY(recents2.contains("https://stream2.example.com/live.m3u8"));
+    QVERIFY(recents2.contains("https://stream1.example.com/live.m3u8"));
 }
 
 QTEST_MAIN(TestOpenUrlDialog)

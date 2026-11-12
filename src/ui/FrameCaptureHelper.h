@@ -22,6 +22,11 @@ public:
     static bool captureToFile(IPlaybackEngine* engine, CaptureMode mode, QWidget* parent = nullptr);
     static bool captureToClipboard(IPlaybackEngine* engine, CaptureMode mode, QWidget* parent = nullptr);
     static void openCaptureFolder(QWidget* parent = nullptr);
+
+    // Lifecycle coordination & shutdown synchronization
+    static void cancelPendingOperations();
+    static bool waitForPendingOperations(int timeoutMs = 1000);
+    static int activeCapturesCount();
 };
 
 } // namespace Jonaki

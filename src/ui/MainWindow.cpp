@@ -48,6 +48,11 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 MainWindow::~MainWindow() {
+    FrameCaptureHelper::cancelPendingOperations();
+    FrameCaptureHelper::waitForPendingOperations(300);
+    if (m_engine) {
+        m_engine->cancelPendingCaptures();
+    }
     if (m_videoWidget) {
         m_videoWidget->cleanupRenderContext();
     }
@@ -482,7 +487,14 @@ void MainWindow::openUrlDialog() {
     OpenUrlDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
         QString url = dlg.getUrl();
+        bool processSubtitles = dlg.isProcessSubtitlesEnabled();
         if (!url.isEmpty()) {
+            if (m_subtitleManager) {
+                m_subtitleManager->setNetworkSubtitleProcessingEnabled(processSubtitles);
+            }
+            if (m_engine) {
+                m_engine->setSubtitleVisibility(processSubtitles);
+            }
             if (m_playlistController) {
                 m_playlistController->addPath(url);
                 int lastIdx = m_playlistController->model()->rowCount() - 1;
@@ -514,6 +526,11 @@ void MainWindow::openPreferencesDialog(int categoryIndex, int subPageIndex) {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
+    FrameCaptureHelper::cancelPendingOperations();
+    FrameCaptureHelper::waitForPendingOperations(300);
+    if (m_engine) {
+        m_engine->cancelPendingCaptures();
+    }
     if (m_videoWidget) {
         m_videoWidget->cleanupRenderContext();
     }

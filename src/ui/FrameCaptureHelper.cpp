@@ -12,9 +12,33 @@
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QUrl>
-#include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 namespace Jonaki {
+
+static std::atomic<int> s_activeCapturesCount{0};
+static std::atomic<bool> s_cancellationRequested{false};
+static std::mutex s_activeMutex;
+static std::condition_variable s_activeCv;
+
+int FrameCaptureHelper::activeCapturesCount() {
+    return s_activeCapturesCount.load();
+}
+
+void FrameCaptureHelper::cancelPendingOperations() {
+    s_cancellationRequested.store(true);
+}
+
+bool FrameCaptureHelper::waitForPendingOperations(int timeoutMs) {
+    std::unique_lock<std::mutex> lock(s_activeMutex);
+    if (s_activeCapturesCount.load() == 0) return true;
+    return s_activeCv.wait_for(lock, std::chrono::milliseconds(timeoutMs), []() {
+        return s_activeCapturesCount.load() == 0;
+    });
+}
 
 QString FrameCaptureHelper::defaultCaptureDirectory() {
     QString picDir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
@@ -79,20 +103,41 @@ bool FrameCaptureHelper::captureToFile(IPlaybackEngine* engine, CaptureMode mode
     }
 
     QString filePath = generateUniqueFilePath(dir);
-    std::string utf8Path = filePath.toStdString();
+    s_cancellationRequested.store(false);
+    {
+        std::lock_guard<std::mutex> lock(s_activeMutex);
+        s_activeCapturesCount++;
+    }
 
-    // Execute capture asynchronously to keep GUI thread responsive
-    std::thread([engine, utf8Path, mode, filePath]() {
-        bool ok = engine->captureFrame(utf8Path, mode);
+    bool dispatched = engine->captureFrameAsync(filePath.toStdString(), mode, [filePath, engine](bool ok, const std::string& err) {
+        {
+            std::lock_guard<std::mutex> lock(s_activeMutex);
+            s_activeCapturesCount--;
+        }
+        s_activeCv.notify_all();
+
+        if (s_cancellationRequested.load()) {
+            if (QFileInfo::exists(filePath)) QFile::remove(filePath);
+            return;
+        }
+
         if (ok && QFileInfo::exists(filePath) && QFileInfo(filePath).size() > 0) {
             QString name = QFileInfo(filePath).fileName();
-            engine->showOsdMessage("Saved frame: " + name.toStdString(), 2000);
+            if (engine) engine->showOsdMessage("Saved frame: " + name.toStdString(), 2000);
         } else {
-            engine->showOsdMessage("Frame capture failed", 2000);
+            if (engine) engine->showOsdMessage("Frame capture failed: " + err, 2000);
+            if (QFileInfo::exists(filePath) && QFileInfo(filePath).size() == 0) {
+                QFile::remove(filePath);
+            }
         }
-    }).detach();
+    });
 
-    return true;
+    if (!dispatched) {
+        std::lock_guard<std::mutex> lock(s_activeMutex);
+        s_activeCapturesCount--;
+        s_activeCv.notify_all();
+    }
+    return dispatched;
 }
 
 bool FrameCaptureHelper::captureToClipboard(IPlaybackEngine* engine, CaptureMode mode, QWidget* parent) {
@@ -106,27 +151,60 @@ bool FrameCaptureHelper::captureToClipboard(IPlaybackEngine* engine, CaptureMode
     QString tempFileName = QString("jonaki_clip_%1.png").arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
     QString tempPath = QDir::toNativeSeparators(tempDir + "/" + tempFileName);
 
-    bool ok = engine->captureFrame(tempPath.toStdString(), mode);
-    if (!ok || !QFileInfo::exists(tempPath) || QFileInfo(tempPath).size() == 0) {
-        engine->showOsdMessage("Failed to capture frame for clipboard");
-        if (QFileInfo::exists(tempPath)) QFile::remove(tempPath);
-        return false;
+    s_cancellationRequested.store(false);
+    {
+        std::lock_guard<std::mutex> lock(s_activeMutex);
+        s_activeCapturesCount++;
     }
 
-    QImage img(tempPath);
-    QFile::remove(tempPath); // Clean up temp file immediately
+    bool dispatched = engine->captureFrameAsync(tempPath.toStdString(), mode, [tempPath, engine, mode](bool ok, const std::string& err) {
+        {
+            std::lock_guard<std::mutex> lock(s_activeMutex);
+            s_activeCapturesCount--;
+        }
+        s_activeCv.notify_all();
 
-    if (img.isNull()) {
-        engine->showOsdMessage("Failed to decode captured frame for clipboard");
-        return false;
+        // RAII cleanup guard to guarantee temporary file removal
+        struct TempFileGuard {
+            QString p;
+            ~TempFileGuard() {
+                if (QFileInfo::exists(p)) QFile::remove(p);
+            }
+        } guard{tempPath};
+
+        if (s_cancellationRequested.load() || !ok) {
+            if (engine && !s_cancellationRequested.load()) {
+                engine->showOsdMessage("Failed to capture frame for clipboard: " + err);
+            }
+            return;
+        }
+
+        if (!QFileInfo::exists(tempPath) || QFileInfo(tempPath).size() == 0) {
+            if (engine) engine->showOsdMessage("Failed to capture frame: empty snapshot");
+            return;
+        }
+
+        QImage img(tempPath);
+        if (img.isNull()) {
+            if (engine) engine->showOsdMessage("Failed to decode captured frame for clipboard");
+            return;
+        }
+
+        // QClipboard operations must occur on the main GUI thread
+        QMetaObject::invokeMethod(qApp, [img, engine, mode]() {
+            QGuiApplication::clipboard()->setImage(img);
+            QString modeLabel = (mode == CaptureMode::Video) ? "Source frame" : "Screen frame";
+            QString osdMsg = QString("%1 copied to clipboard (%2x%3)").arg(modeLabel).arg(img.width()).arg(img.height());
+            if (engine) engine->showOsdMessage(osdMsg.toStdString(), 2000);
+        }, Qt::QueuedConnection);
+    });
+
+    if (!dispatched) {
+        std::lock_guard<std::mutex> lock(s_activeMutex);
+        s_activeCapturesCount--;
+        s_activeCv.notify_all();
     }
-
-    QGuiApplication::clipboard()->setImage(img);
-    QString modeLabel = (mode == CaptureMode::Video) ? "Source frame" : "Screen frame";
-    QString osdMsg = QString("%1 copied to clipboard (%2x%3)").arg(modeLabel).arg(img.width()).arg(img.height());
-    engine->showOsdMessage(osdMsg.toStdString(), 2000);
-
-    return true;
+    return dispatched;
 }
 
 void FrameCaptureHelper::openCaptureFolder(QWidget* parent) {

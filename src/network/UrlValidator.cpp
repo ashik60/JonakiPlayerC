@@ -2,6 +2,7 @@
 
 #include <QUrlQuery>
 #include <QRegularExpression>
+#include <QSet>
 
 namespace Jonaki {
 
@@ -60,24 +61,42 @@ QString UrlValidator::sanitizeForLogging(const QString& urlStr) {
         url.setPassword("***");
     }
 
-    // Redact sensitive query parameters (token, signature, sig, auth, key, password)
+    // Redact sensitive query parameters (AWS, Akamai, CloudFront, GCS, Azure SAS, tokens, credentials)
     if (url.hasQuery()) {
         QUrlQuery query(url.query());
-        auto items = query.queryItems();
+        auto items = query.queryItems(QUrl::FullyDecoded);
         QUrlQuery sanitizedQuery;
-        static const QStringList sensitiveKeys = {
-            "token", "signature", "sig", "auth", "key", "password", "pass", "secret", "access_token"
+
+        static const QSet<QString> exactSensitiveKeys = {
+            "token", "signature", "sig", "auth", "key", "password", "pass", "passwd",
+            "secret", "access_token", "auth_token", "api_key", "apikey",
+            "credential", "jwt", "session", "session_id", "sessid",
+            "hdnts", "hdnea", "hls_token", "aka_token",
+            "policy", "key-pair-id", "googleaccessid",
+            "se", "sp", "sv", "sr", "st", "sip", "spr", "si", "skoid", "sktid", "skt", "ske", "skv", "sks"
+        };
+
+        static const QStringList substringPatterns = {
+            "token", "secret", "password", "signature", "credential", "apikey", "api_key"
         };
 
         for (const auto& item : items) {
-            QString keyLower = item.first.toLower();
+            QString decodedKey = QUrl::fromPercentEncoding(item.first.toUtf8()).toLower();
             bool isSensitive = false;
-            for (const auto& sk : sensitiveKeys) {
-                if (keyLower.contains(sk)) {
-                    isSensitive = true;
-                    break;
+
+            if (exactSensitiveKeys.contains(decodedKey)) {
+                isSensitive = true;
+            } else if (decodedKey.startsWith("x-amz-") || decodedKey.startsWith("x-goog-")) {
+                isSensitive = true;
+            } else {
+                for (const auto& pat : substringPatterns) {
+                    if (decodedKey.contains(pat)) {
+                        isSensitive = true;
+                        break;
+                    }
                 }
             }
+
             if (isSensitive) {
                 sanitizedQuery.addQueryItem(item.first, "***");
             } else {

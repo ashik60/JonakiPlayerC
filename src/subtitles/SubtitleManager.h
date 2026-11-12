@@ -29,8 +29,13 @@ public:
     void resetDelay();
     double currentDelay() const;
 
+    // Network subtitle configuration
+    void setNetworkSubtitleProcessingEnabled(bool enabled) { m_networkSubtitleProcessing = enabled; }
+    bool isNetworkSubtitleProcessingEnabled() const { return m_networkSubtitleProcessing; }
+
 private:
     IPlaybackEngine* m_engine = nullptr;
+    bool m_networkSubtitleProcessing = true;
 };
 
 } // namespace Jonaki
