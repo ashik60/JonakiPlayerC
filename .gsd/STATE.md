@@ -1,33 +1,45 @@
 ---
-updated: 2026-11-11T12:20:00+06:00
+updated: 2026-11-12T08:36:00+06:00
 ---
 
 # Project State
 
 ## Current Position
 
-**Milestone:** M7 - Advanced Features & Preferences Dialog Hierarchy
-**Phase:** Phase 7 - Advanced Features & Preferences
-**Status:** completed
-**Plan:** M7 Advanced Features & Preferences Hierarchy
+**Milestone:** M7 / M8 Transition (M7 Audit Correction & M8 Architecture Finalization)
+**Phase:** Phase 8 - Skin Engine Fidelity & Complete Theming
+**Status:** planning
+**Plan:** Milestone M8 Implementation Plan (Pre-Implementation Lock Active)
 
 ## Last Action
 
-- Completed and verified Wave 7.4: Hardware Decoding Profiles & A-B Repeat Loop.
-- Extended `IPlaybackEngine` and implemented dynamic hardware-decoding profile switching (`auto-safe`, `d3d11va`, `d3d11va-copy`, `dxva2`, `dxva2-copy`, `d3d12va`, `d3d12va-copy`, `no`) in `MpvPlaybackEngine` without playback crash or interruption.
-- Implemented active decoder and video codec inspection with fallback to track properties.
-- Implemented native A-B repeat looping (`[` set A, `]` set B, `\` toggle, `Shift+[` clear A, `Shift+]` clear B).
-- Added timeline marker rendering in `BottomControlBar` (cyan for Point A, red/orange for Point B).
-- Wired `PreferencesDialog` hardware acceleration profile selection to the active playback engine.
-- Implemented `tests/integration/test_hwdec_profiles.cpp` (10 passing cases) and `tests/unit/test_ab_repeat.cpp` (9 passing cases).
-- Verified 100% pass across all 13 CTest targets.
-- Verified real-world media playback and hardware acceleration on `E:\Video Song`.
-- Generated `docs/milestones/milestone-reports/wave_7_4_completion_report.md` and `docs/milestones/milestone-reports/milestone_M7_completion_report.md`.
+- Completed independent M7 audit correction and empirical re-examination across source code, tests, and runtime artifacts:
+  - HTTPS: Distinguished static TLS protocol linkage from demonstrated live streaming with certificate validation (reclassified to Partially Verified).
+  - Process Subtitles: Documented disconnect of `isProcessSubtitlesEnabled()` from `MainWindow::openUrlDialog()` and subtitle pipeline (reclassified to Partially Verified / Disconnected UI Feature).
+  - Store Only Entered URLs: Documented missing hooks for playlist `.dpl` and drag-and-drop URLs (reclassified to Partially Verified / Incomplete Behavior).
+  - URL Redaction: Verified uppercase/percent-encoding handling and documented omission of cloud/CDN parameters (reclassified to Partially Verified).
+  - HWDEC: Empirically separated H.264 (hardware accelerated `d3d11va`) from AV1 (software fallback `libdav1d` due to host Haswell GPU limitations).
+  - A-B Repeat: Documented lack of runtime wrap tests and missing mpv property reset on `loadMedia()`.
+  - Frame Capture: Documented thread-safety defect in `FrameCaptureHelper::captureToFile()` with unmanaged detached worker thread.
+- Produced comprehensive `docs/milestones/milestone-reports/milestone_M7_audit_correction_report.md` and updated `milestone_M7_completion_report.md` (eliminated zero defect claim).
+- Reverse-engineered PotPlayer reference skin mechanics (`Default.dsf`, `WindowFrame.dsf`):
+  - 4-frame horizontal button stride (`[Normal, Hover, Pressed, Disabled]`).
+  - Dynamic palette sampling (`ColorX`/`ColorY` into `Main.png`).
+  - `Alignment='5'` Win32 GDI centering flag -> `Qt::AlignCenter`.
+  - Responsive visibility rules (`VisParentMinWidth`, `VisMinLeft`).
+  - Scoped atlas overrides (`<ImageReplace>`).
+  - Composite scrollbars (`ScrollBar.bmp`, `ScrollBarPL.bmp`).
+  - `PlayPauseWidget` animation timing (150ms in, 350ms hold, 250ms out).
+- Generated machine-readable directive inventory: `docs/reverse-engineering/skin_directive_inventory.json` (1,714 records across all 21 reference XML/TXT layout files) and companion `docs/reverse-engineering/skin_directive_inventory.md`.
+- Updated `docs/reverse-engineering/skin-compatibility-audit.md`.
+- Finalized M8 Architecture: `docs/architecture/m8_skin_and_theme_architecture.md` (Common IR `SkinThemeModel`, single `SkinRenderer`, Zip Slip & Bomb guards, XXE prevention, malformed theme containment).
+- Authored `docs/milestones/milestone-reports/milestone_M8_implementation_plan.md` across Waves 8.1–8.4 with detailed empirical acceptance criteria.
+- **Wave 8.1 implementation is held locked pending user review.**
 
 ## Next Steps
 
-1. Present Milestone M7 Completion Report for user review.
-2. Upon approval, transition to Milestone M8: Skin Engine Fidelity & Complete Theming.
+1. Await user review and approval of the M7 Audit Correction and M8 Architecture / Implementation Plan.
+2. Upon approval, proceed to Wave 8.1: Parser Expansion & Palette Sampling.
 
 ## Active Decisions
 
@@ -42,10 +54,12 @@ updated: 2026-11-11T12:20:00+06:00
 | TDR-007 Playlist & Resume Schema | Daum `.dpl` parser + SQLite `MediaInfo.sdb` | 2026-11-09 | M4, M7 |
 | TDR-008 Subtitle & OSD Pipeline | `libmpv` native `libass` + OSD overlay via `show-text` | 2026-11-09 | M5, M6 |
 | TDR-009 Filter Chain Management | Unified `applyAudioFilters()` managing EQ and dynaudnorm | 2026-11-09 | M6, M7 |
+| TDR-010 Common Skin & Theme IR | Unified `SkinThemeModel` IR + single `SkinRenderer` pipeline | 2026-11-12 | M8 |
+| TDR-011 Clean-Room Reference Isolation | Exclude reference spritesheets/assets from distribution packaging | 2026-11-12 | M8, M10 |
 
 ## Blockers
 
-*None. Audio & Video systems are fully operational and verified.*
+*None. Pre-implementation lock active.*
 
 ## Concerns
 

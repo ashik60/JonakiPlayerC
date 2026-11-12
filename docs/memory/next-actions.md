@@ -4,37 +4,53 @@ This file maintains the immediate, ordered implementation tasks for active sessi
 
 ---
 
-## Active Milestone: M7 — Advanced Features & Preferences Dialog Hierarchy
+## Active Milestone: M8 — Skin Engine Fidelity & Complete Theming
 
-### Immediate Next Tasks
-1. [x] **Real-World Media Final Evidence Audit:** Audit `docs/testing/real_media_test_report.md` and `tests/integration/test_real_media_playback.cpp` to explicitly distinguish 7 pipeline stages, smoke-test scope, filter vs. acoustic quality separation, and qualified memory stability.
-2. [x] **M7 Reconnaissance & Preferences Hierarchy Design (Wave 7.1):**
-   - Review PotPlayer Preferences Dialog layout (751 × 564 px measured baseline, 24 sub-pages across 6 categories in REV-018).
-   - Implement `SettingsTransaction` staging buffer with commit, discard, reset to defaults, and INI export.
-   - Implement tree-based Preferences window with left category tree and right settings pane (`src/ui/PreferencesDialog.h/.cpp`) and 6 modular category page groups.
-   - Wire `F5` shortcut and Context Menu item.
-   - Verified 100% pass on `PreferencesDialogTest`.
-3. [x] **Frame Capture Subsystem & Clipboard Integration (Wave 7.2):**
-   - Implement platform-independent `CaptureMode` enum and `captureFrame()` in `IPlaybackEngine` and `MpvPlaybackEngine` via `screenshot-to-file`.
-   - Implement `FrameCaptureHelper` with collision-safe filenames (`Jonaki_YYYYMMDD_HHMMSS_mmm.png`), directory management, asynchronous capture, and clipboard image copying.
-   - Wire `Ctrl+E`, `Ctrl+Alt+E`, `Ctrl+C`, `Ctrl+Alt+C`, and Video Capture context menu.
-   - Verified 100% pass on `FrameCaptureTest`.
-4. [x] **Network Streaming URL Playback (Wave 7.3):**
-   - Implement `UrlValidator` supporting HTTP, HTTPS, RTMP, and RTMPS schemes, HLS (.m3u8) detection, parameter preservation, and credential sanitization.
-   - Implement `OpenUrlDialog` (`Ctrl+U`) matching PotPlayer Dialog 310 layout with history combobox, auto-clipboard paste toggle, and persistence.
-   - Wire `Ctrl+U` shortcut and File -> Open URL menu item, appending directly to playlist.
-   - Implement automated local HTTP test server harness and deterministic HLS test stream fixtures.
-   - Implement `tests/unit/test_open_url_dialog.cpp` and `tests/integration/test_network_streaming.cpp`.
-   - Verified 100% pass across all 11 CTest targets.
-5. [x] **Hardware Decoding Configuration & A-B Repeat Loop (Wave 7.4):**
-   - Provide hardware decoding profile selection (D3D11VA, DXVA2, copy-back vs native, auto, off).
-   - Implement dynamic runtime `hwdec` switching and active status feedback.
-   - Implement A-B repeat (`[`, `]`, `\`, `Shift+[`, `Shift+]`) with seekbar tick rendering.
-   - Implement `HwdecProfileTest` and `ABRepeatTest`.
-6. [x] **M7 Automated Integration Tests & Parity Verification:**
-   - Verify full 13-target CTest suite passes 100%.
-   - Publish `docs/milestones/milestone-reports/wave_7_4_completion_report.md` and `docs/milestones/milestone-reports/milestone_M7_completion_report.md`.
+### Planning & Reconnaissance (Completed)
+1. [x] **M7 Independent Audit Correction (Part A):**
+   - Re-examined source code, tests, and runtime evidence across 7 areas.
+   - Identified and documented defects in Subtitle checkbox wiring, playlist URL history recording, missing AV1 HWDEC empirical separation, missing A-B wrap tests, and FrameCapture detached thread safety.
+   - Published `docs/milestones/milestone-reports/milestone_M7_audit_correction_report.md` and updated `milestone_M7_completion_report.md`.
+2. [x] **Reference Skin Reverse-Engineering Validation (Part B):**
+   - Conducted controlled tests on PotPlayer skins (`Default.dsf`, `WindowFrame.dsf`).
+   - Discovered and verified 4-frame button stride, `ColorX`/`ColorY` palette sampling, `Alignment='5'` Win32 centering, `VisParentMinWidth`/`VisMinLeft` responsive hiding, `ImageReplace` scoping, and composite scrollbars.
+   - Generated machine-readable inventory `docs/reverse-engineering/skin_directive_inventory.json` (1,714 records across 21 files) and summary `docs/reverse-engineering/skin_directive_inventory.md`.
+   - Updated `docs/reverse-engineering/skin-compatibility-audit.md`.
+3. [x] **Common Theme Intermediate Representation Architecture (Part C & D):**
+   - Designed platform-neutral `SkinThemeModel` IR unifying PotPlayer DSF/XML and Native JSON.
+   - Enforced single Qt `SkinRenderer` pipeline.
+   - Established security specifications: Zip Slip protection, Zip Bomb limits, XXE-safe XML parsing, and malformed theme default fallback.
+   - Audited reference assets; enforced strict exclusion from distribution packaging.
+   - Published `docs/architecture/m8_skin_and_theme_architecture.md`.
+4. [x] **Visual Regression Architecture & Plan Refinement (Part E & F):**
+   - Distinguishes logical Qt bounds from physical screenshot pixels across 100%, 125%, 150% DPI.
+   - Defined multi-resolution geometry assertions and tolerant component-level SSIM visual comparison.
+   - Published `docs/milestones/milestone-reports/milestone_M8_implementation_plan.md` across Waves 8.1–8.4 with empirical acceptance criteria.
 
-## Upcoming Milestone: M8 — Skin Engine Fidelity & Complete Theming
-1. [ ] Parse PotPlayer skin `.dsf` / XML archive structures and bitmap slices.
-2. [ ] Reconstruct default PotPlayer skin controls with 1:1 visual parity.
+---
+
+### Implementation Waves (Pre-Implementation Lock Active)
+
+**Do not begin implementation until user review and approval.**
+
+1. [ ] **Wave 8.1 — Parser Expansion & Palette Sampling:**
+   - Secure DSF archive extractor (`DsfArchiveExtractor`) with Zip Slip and bomb guards.
+   - XXE-safe XML parser expansion (`<ImageReplace>`, `<Image>`, `<SubImage>`, `Alignment='5'`, `DownFlag='1'`).
+   - Dynamic palette sampler (`ColorX`/`ColorY` lookup into `Main.png`).
+   - Responsive visibility rule evaluator (`VisParentMinWidth`, `VisMinLeft`).
+2. [ ] **Wave 8.2 — Nine-Patch Rendering & Multi-State Sprites:**
+   - 4-frame button state stride extraction (`[Normal, Hover, Pressed, Disabled]`).
+   - 3-patch horizontal/vertical border slicing.
+   - 9-patch window chrome slicing (`WindowType0/1/2`, `Window.png`).
+   - ScrollBar composite component rendering (`ScrollBar.bmp`).
+   - `PlayPauseWidget` centered animation overlay.
+3. [ ] **Wave 8.3 — Native Theme Architecture & Common IR:**
+   - Formalize `SkinThemeModel` IR data structures.
+   - Implement `PotPlayerSkinCompiler` and `NativeThemeLoader` (JSON schema).
+   - Unify painting under single `SkinRenderer`.
+   - Malformed theme containment and default fallback.
+4. [ ] **Wave 8.4 — Visual Regression & High-DPI Validation:**
+   - High-DPI scaling validation (DPR 1.0, 1.25, 1.50).
+   - Multi-resolution geometry test suite (723×399, 800×450, 1024×576, 1366×768, Fullscreen).
+   - Component-level SSIM visual regression test.
+   - Full parity matrix sign-off.
